@@ -1,0 +1,38 @@
+{
+  "name": "@uappkit/cli",
+  "version": "1.0.3",
+  "description": "uapp 让uniapp离线打包更简单高效",
+  "main": "bin/uapp",
+  "bin": {
+    "uapp": "bin/uapp"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uappkit/uapp-cli.git"
+  },
+  "keywords": [
+    "uapp",
+    "uappkit",
+    "uappsdk",
+    "uniapp"
+  ],
+  "dependencies": {
+    "chalk": "^0.5.1",
+    "chokidar": "^3.5.3",
+    "fs-extra": "^10.0.1",
+    "lodash": ">=4.17.21",
+    "nopt": "^5.0.0",
+    "update-notifier": "^5.1.0"
+  },
+  "bugs": {
+    "url": "https://github.com/uappkit/uapp-cli/issues"
+  },
+  "homepage": "https://github.com/uappkit/uapp-cli#readme",
+  "directories": {
+    "doc": "doc"
+  },
+  "author": "Qisen"
+}
