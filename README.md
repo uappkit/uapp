@@ -86,7 +86,13 @@ uapp sdk
 cd android
 
 # 仅需要一个参数，指向uniapp工程的 manifest.json
-uapp {uni-app 工程目录}/src/manifest.json
+uapp manifest {uni-app 工程目录}/src/manifest.json
+
+# 执行后，工程根目录会创建软连接，下次执行可以不带参数
+uapp manifest
+
+# 更新 HBuilderX 本地打包资源
+uapp prepare
 ```
 
 ## ios 离线打包方法
@@ -99,7 +105,11 @@ uapp {uni-app 工程目录}/src/manifest.json
 cd ios 
 
 # 和上面 android 使用方法一致
-uapp {uni-app 工程目录}/src/manifest.json
+uapp manifest {uni-app 工程目录}/src/manifest.json
+uapp manifest
+
+# 更新 HBuilderX 本地打包资源
+uapp prepare
 ```
 
 ## manifest.json 相关配置
@@ -154,9 +164,21 @@ uapp {uni-app 工程目录}/src/manifest.json
 
 <https://open.weixin.qq.com/>
 
+## 更新 HBuilderX 本地打包资源
+
+```
+uapp prepare
+```
+
+如果通过 HBuilderX 重新编译，或者通过 uniapp-cli 命令重新编译的资源，可以通过 prepare 命令更新到离线 APP 工程中，用于 APP 重新打包发布。
+
 ## 跨端开发注意事项
 
 <https://uniapp.dcloud.io/matter.html>
+
+## uapp 使用帮助
+
+见 [doc/help.txt](doc/help.txt)
 
 ## 联系我
 
