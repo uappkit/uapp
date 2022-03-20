@@ -7,7 +7,10 @@ uapp 使用方法:
     2. 安装或更新 uappsdk
     uapp sdk
 
-    3. 其他命令
+    3. 复制 HBuilderX 生成的本地打包APP资源
+    uapp prepare
+
+    其他命令
     uapp -v 或 --version (查看 uapp 版本)
     uapp -h 或 --help (查看帮助)
     uapp help (查看帮助)
@@ -16,6 +19,6 @@ uapp 使用方法:
 
     uapp sdk
     uapp manifest project/src/manifest.json
-    uapp help
+    uapp prepare
     uapp -h
     uapp --version

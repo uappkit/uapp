@@ -1,6 +1,6 @@
 {
   "name": "@uappkit/cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "uapp 让uniapp离线打包更简单高效",
   "main": "bin/uapp",
   "bin": {

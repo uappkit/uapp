@@ -23,6 +23,7 @@ const shortHands = {
 };
 
 const appDir = process.cwd();
+const localLinkManifest = path.join(appDir, 'manifest.json');
 const sdkHomeDir = path.join(require('os').homedir(), '.uappsdk');
 let manifest = '';
 
@@ -43,14 +44,55 @@ module.exports = function (inputArgs) {
     return;
   }
 
+  let platform = fs.existsSync(path.join(appDir, 'Main/AppDelegate.m')) ? 'ios' : 'android';
+  if (fs.existsSync(path.join(appDir, 'Main/AppDelegate.m'))) {
+    platform = 'ios';
+  } else if (fs.existsSync(path.join(appDir, '/app/build.gradle'))) {
+    platform = 'android';
+  } else {
+    console.log('查看帮助: uapp -h');
+    console.log('uapp 命令必须在APP工程模板根目录下运行');
+    console.log('├─ android: https://github.com/uappkit/uapp-android');
+    console.log('└─ ios: https://github.com/uappkit/uapp-ios');
+    return;
+  }
+
   if (cmd === 'sdk') {
     sync(path.resolve(__dirname, '../uappsdk'), sdkHomeDir);
     console.log(chalk.green('------ uappsdk 已安装 ------'));
     return;
   }
 
+  if (cmd == 'prepare') {
+    manifestFile = path.join(appDir, 'manifest.json');
+    manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
+    let compiledDir = path.join(
+      path.dirname(fs.realpathSync(localLinkManifest)),
+      'unpackage/resources/',
+      manifest['appid']
+    );
+
+    let embedAppsDir = path.join(
+      appDir,
+      platform === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
+      manifest['appid']
+    );
+
+    fs.existsSync(embedAppsDir) && fs.rmdirSync(embedAppsDir, { recursive: true });
+    fs.mkdirSync(embedAppsDir, { recursive: true });
+    sync(compiledDir, embedAppsDir);
+    console.log(chalk.green('打包APP资源已就绪'));
+    return;
+  }
+
   if (cmd === 'manifest') {
-    const manifestFile = args.argv.remain[1] ?? 'manifest.json';
+    let manifestFile = args.argv.remain[1] || 'manifest.json';
+
+    // check symlink
+    if (manifestFile === 'manifest.json' && fs.lstatSync(localLinkManifest, { throwIfNoEntry: false })) {
+      manifestFile = fs.realpathSync(localLinkManifest);
+    }
+
     if (!fs.existsSync(manifestFile)) {
       console.log('找不到: ' + manifestFile);
       console.log('如需测试，可以使用 manifest 模板: ');
@@ -64,6 +106,7 @@ module.exports = function (inputArgs) {
     } else if (fs.existsSync(path.join(appDir, '/app/build.gradle'))) {
       platform = 'android';
     } else {
+      console.log('查看帮助: uapp -h');
       console.log('uapp 命令必须在APP工程模板根目录下运行');
       console.log('├─ android: https://github.com/uappkit/uapp-android');
       console.log('└─ ios: https://github.com/uappkit/uapp-ios');
@@ -76,6 +119,9 @@ module.exports = function (inputArgs) {
     }
 
     console.log('当前使用 manifest: ' + manifestFile);
+
+    fs.lstatSync(localLinkManifest, { throwIfNoEntry: false }) && fs.unlinkSync(localLinkManifest);
+    fs.symlinkSync(manifestFile, localLinkManifest);
     manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
 
     if (platform == 'android') {
@@ -206,9 +252,7 @@ function processAndroid() {
         wxEntryActivityFile
       );
 
-      fs.mkdirSync(path.dirname(replaceFile), {
-        recursive: true,
-      });
+      fs.mkdirSync(path.dirname(replaceFile), { recursive: true });
       fs.writeFileSync(replaceFile, content);
     }
   });
