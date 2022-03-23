@@ -4,6 +4,7 @@
  * Copyright(c) 2022-03-09
  */
 
+const _ = require('lodash');
 const nopt = require('nopt');
 const updateNotifier = require('update-notifier');
 const fs = require('fs');
@@ -123,6 +124,7 @@ module.exports = function (inputArgs) {
     fs.lstatSync(localLinkManifest, { throwIfNoEntry: false }) && fs.unlinkSync(localLinkManifest);
     fs.symlinkSync(manifestFile, localLinkManifest);
     manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
+    manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
 
     if (platform == 'android') {
       processAndroid();
@@ -207,7 +209,7 @@ function stripJSONComments(data) {
  */
 
 function processAndroid() {
-  let packageName = manifest['app-plus'].package;
+  let packageName = manifest['uapp']['android.package'] || manifest['uapp']['package'];
   let wxEntryActivityFile = 'WXEntryActivity.java';
 
   const templateDir = path.join(sdkHomeDir, 'templates/android');
@@ -216,11 +218,11 @@ function processAndroid() {
       let content = fs.readFileSync(templateFile, 'utf-8');
 
       content = content.replace('${package}', packageName);
-      content = content.replace('${name}', manifest.name);
+      content = content.replace('${name}',  manifest['uapp']['android.name'] || manifest['uapp']['name'] || manifest.name);
 
-      content = content.replace('${DCLOUD_APPKEY}', manifest['app-plus'].distribute.android['dcloud_appkey']);
-      content = content.replace('${versionName}', manifest.versionName);
-      content = content.replace('${versionCode}', manifest.versionCode);
+      content = content.replace('${DCLOUD_APPKEY}', manifest['uapp']['android.appkey']);
+      content = content.replace('${versionName}', manifest['uapp']['android.versionName'] || manifest.versionName);
+      content = content.replace('${versionCode}',  manifest['uapp']['android.versionCode'] || manifest.versionCode);
 
       content = content.replace('${WX_APPID}', manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid);
       content = content.replace('${WX_SECRET}', manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret);
@@ -279,9 +281,9 @@ function processIOS() {
     if (templateFile.endsWith('base.yml')) {
       let content = fs.readFileSync(templateFile, 'utf-8');
 
-      content = content.replace('${package}', manifest['app-plus'].package);
-      content = content.replace('${versionName}', manifest.versionName);
-      content = content.replace('${versionCode}', manifest.versionCode);
+      content = content.replace('${package}', manifest['uapp']['ios.package'] || manifest['uapp']['package']);
+      content = content.replace('${versionName}', manifest['uapp']['ios.versionName'] || manifest.versionName);
+      content = content.replace('${versionCode}', manifest['uapp']['ios.versionCode'] || manifest.versionCode);
 
       // overwrite content
       let replaceFile = templateFile.replace(templateDir, appDir);
@@ -304,7 +306,7 @@ function processIOS() {
   }
   fs.symlinkSync(path.join(sdkHomeDir, '/ios/SDK'), sdkLinkDir, 'dir');
 
-  require('child_process').execSync('xcodegen', { stdio: 'inherit' });
+  // require('child_process').execSync('xcodegen', { stdio: 'inherit' });
   console.log('processIOS successfully');
 }
 
@@ -318,7 +320,7 @@ function replaceStoryboard(storyboardFile) {
 function replaceInfoPlist(plistFile) {
   let content = fs.readFileSync(plistFile, 'utf-8');
   let re = /(<key>dcloud_appkey<\/key>\n.+?<string>)(.+?)(<\/string>)/g;
-  content = content.replace(re, '$1' + manifest['app-plus'].distribute.ios['dcloud_appkey'] + '$3');
+  content = content.replace(re, '$1' + manifest['uapp']['ios.appkey'] + '$3');
 
   // replace ios and wexin meanwhile
   re = /(<key>UniversalLinks<\/key>\n.+?<string>)(.+?)(<\/string>)/g;

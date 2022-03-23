@@ -120,37 +120,32 @@ uapp prepare
 
 ```.json
 {
-    "name" : "μAppKit",
-    "appid" : "__UNI__ECA8F4D",
-    "description" : "made by uapp",
-    "versionName" : "1.0.1",
-    "versionCode" : "1000000",
-    "app-plus" : {
-        "package": "com.code0xff.uapp",
-        "useragent": "uapp",
-        "modules" : {
-            "VideoPlayer" : {},
-            "OAuth" : {}
-        },
-        "distribute" : {
-            "android" : {
-               "dcloud_appkey": "b4ab7d1c668cbb3b257aeeabd75c29da"
-            },
-            "ios" : {
-                "dcloud_appkey": "aa215ff1522abe39cb7ccec5943eeb92"
-            },
-            "sdkConfigs" : {
-                "oauth" : {
-                    "apple" : {},
-                    "weixin" : {
-                        "appid" : "wx95039516c9f72e50",
-                        "appsecret" : "123456",
-                        "UniversalLinks" : "https://uapp.code0xff.com/"
-                    }
-                }
-            }
+  "name": "uapp",
+  "appid": "__UNI__ECA8F4D",
+  "description": "made by uapp",
+  "versionName": "1.0.1",
+  "versionCode": "1000000",
+  "uapp": {
+    /* name, package, versionName, versionCode 如果需要平台差异化定义, 可以加前缀 android.xxx, ios.xxx */
+    /* 例如 android.name, android.package, ios.package, ios.versionCode ... */
+    "name": "μAppKit",
+    "package": "com.code0xff.uapp",
+    "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
+    "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92"
+  },
+  "app-plus": {
+    "distribute": {
+      "sdkConfigs": {
+        "oauth": {
+          "weixin": {
+            "appid": "wx95039516c9f72e50",
+            "appsecret": "123456",
+            "UniversalLinks": "https://uapp.code0xff.com/"
+          }
         }
+      }
     }
+  }
 }
 ```
 
