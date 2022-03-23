@@ -291,6 +291,9 @@ function processIOS() {
     }
   });
 
+  // update name
+  manifest['name'] = manifest['uapp']['ios.name'] || manifest['uapp']['name'] || manifest['name'];
+
   replaceStoryboard(path.join(appDir, 'Main/Resources/LaunchScreen.storyboard'));
   replaceStoryboard(path.join(appDir, 'Main/Resources/LaunchScreenAD.storyboard'));
 
@@ -319,20 +322,23 @@ function replaceStoryboard(storyboardFile) {
 
 function replaceInfoPlist(plistFile) {
   let content = fs.readFileSync(plistFile, 'utf-8');
-  let re = /(<key>dcloud_appkey<\/key>\n.+?<string>)(.+?)(<\/string>)/g;
+  let re = /(<key>dcloud_appkey<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
   content = content.replace(re, '$1' + manifest['uapp']['ios.appkey'] + '$3');
 
   // replace ios and wexin meanwhile
-  re = /(<key>UniversalLinks<\/key>\n.+?<string>)(.+?)(<\/string>)/g;
+  re = /(<key>UniversalLinks<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
   content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.UniversalLinks + '$3');
 
-  re = /(<key>weixin<\/key>[\s\S]+?appid<\/key>\n.+?<string>)(.+?)(<\/string>)/g;
+  re = /(<key>weixin<\/key>[\s\S]+?appid<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
   content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3');
 
-  re = /(<key>weixin<\/key>[\s\S]+?appSecret<\/key>\n.+<string>)(.+?)(<\/string>)/g;
+  re = /(<string>weixin<\/string>\n.+?<key>CFBundleURLSchemes<\/key>[\s\S]+?<string>)(.*?)(<\/string>)/g;
+  content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3');
+
+  re = /(<key>weixin<\/key>[\s\S]+?appSecret<\/key>\n.+<string>)(.*?)(<\/string>)/g;
   content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret + '$3');
 
-  re = /(<key>CFBundleDisplayName<\/key>\n.+?<string>)(.+?)(<\/string>)/g;
+  re = /(<key>CFBundleDisplayName<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
   if (!re.test(content)) {
     console.error('no CFBundleDisplayName, you should use xcode set Display Name first');
     process.exit(1);
