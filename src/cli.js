@@ -56,7 +56,7 @@ module.exports = function (inputArgs) {
     return;
   }
 
-  if (cmd === 'sdk') {
+  if (cmd === 'sdk' && args.argv.remain[1] === 'init') {
     sync(path.resolve(__dirname, '../uappsdk'), sdkHomeDir);
     console.log(chalk.green('------ uappsdk 已安装 ------'));
     return;

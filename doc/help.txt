@@ -4,8 +4,8 @@ uapp 使用方法:
     1. 核心命令: 读取 manifest.json 配置, 并更新 android 或 ios 工程
     uapp manifest project/src/manifest.json
 
-    2. 安装或更新 uappsdk
-    uapp sdk
+    2. 初始化或更新 uappsdk
+    uapp sdk init
 
     3. 复制 HBuilderX 生成的本地打包APP资源
     uapp prepare
@@ -17,7 +17,7 @@ uapp 使用方法:
 
 示例：
 
-    uapp sdk
+    uapp sdk init
     uapp manifest project/src/manifest.json
     uapp prepare
     uapp -h

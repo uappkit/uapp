@@ -27,8 +27,8 @@ uniapp 在线打包，一般无法满足灵活的需求，比如：
 ```
 npm install -g git@github.com:uappkit/uapp-cli.git
 
-# 安装或更新 uappsdk
-uapp sdk
+# 初始化或更新 uappsdk
+uapp sdk init
 ```
 
 2、下载 uniapp 离线打包的 SDK
