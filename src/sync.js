@@ -45,7 +45,7 @@ module.exports = function (source, target) {
         break;
 
       case 'no-delete':
-        console.log('检测出多余文件: %s', chalk.yellow(data));
+        // console.log('keep: %s', chalk.yellow(data));
         break;
 
       // Fallback: forgotten logs, displayed only in verbose mode

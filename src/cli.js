@@ -267,8 +267,14 @@ function processAndroid() {
   // cleanup empty folder
   cleanEmptyFoldersRecursively(sourceDir);
 
-  content = fs.readFileSync(templateFile, 'utf-8');
-  content = content.replace('com.code0xff.uapp.wxapi', packageName + '.wxapi');
+  // DONT change content here
+  content = `package ${packageName}.wxapi;
+import io.dcloud.feature.oauth.weixin.AbsWXCallbackActivity;
+
+public class WXEntryActivity extends AbsWXCallbackActivity {
+
+}
+`;
   let replaceFile = path.join(
     appDir,
     'app/src/main/java/',
