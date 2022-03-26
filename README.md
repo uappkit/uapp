@@ -54,8 +54,6 @@ uapp sdk init
 ├── ios
 │   ├── SDK # -> 这里是iOS的SDK
 └── templates
-    ├── android
-    ├── ios
     └── manifest.json
 ```
 
@@ -76,40 +74,29 @@ uapp sdk init
 
 <https://nativesupport.dcloud.net.cn/AppDocs/usemodule/iOSModuleConfig/common>
 
-## android 离线打包方法
+## 下载离线打包工程模板
 
-下载 android 离线工程模板:
+### 1. 下载 android 离线工程模板
 
-`git clone https://github.com/uappkit/uapp-android.git android`
+`git clone https://github.com/uappkit/uapp-android.git`
 
-```.bash
-cd android
+### 2. 下载 ios 离线工程模板
 
-# 仅需要一个参数，指向uniapp工程的 manifest.json
-uapp manifest {uni-app 工程目录}/src/manifest.json
+`git clone https://github.com/uappkit/uapp-ios.git`
 
-# 执行后，工程根目录会创建软连接，下次执行可以不带参数
-uapp manifest
+### 3. 工程下常见命令
 
-# 更新 HBuilderX 本地打包资源
-uapp prepare
 ```
-
-## ios 离线打包方法
-
-下载 ios 离线工程模板:
-
-`git clone https://github.com/uappkit/uapp-ios.git ios`
-
-```.bash
-cd ios 
-
-# 和上面 android 使用方法一致
+# 读取 manifest 中的配置，并更新基本信息
 uapp manifest {uni-app 工程目录}/src/manifest.json
 uapp manifest
 
 # 更新 HBuilderX 本地打包资源
+# 如果通过 HBuilderX 重新编译，或者通过 uniapp-cli 命令重新编译的资源，可以通过 prepare 命令更新到离线 APP 工程中，用于 APP 重新打包发布。
 uapp prepare
+
+# 发布离线打包基座到 HBuilderX 下
+uapp publish debug
 ```
 
 ## manifest.json 相关配置
@@ -159,14 +146,6 @@ uapp prepare
 
 <https://open.weixin.qq.com/>
 
-## 更新 HBuilderX 本地打包资源
-
-```
-uapp prepare
-```
-
-如果通过 HBuilderX 重新编译，或者通过 uniapp-cli 命令重新编译的资源，可以通过 prepare 命令更新到离线 APP 工程中，用于 APP 重新打包发布。
-
 ## 跨端开发注意事项
 
 <https://uniapp.dcloud.io/matter.html>
@@ -175,7 +154,10 @@ uapp prepare
 
 见 [doc/help.txt](doc/help.txt)
 
-## 联系我
+## 技术问题加群
 
-    微信：yinqisen
-    Email: v@yinqisen.cn
+  遇到技术问题，可加微信入群交流
+
+  微信：yinqisen
+
+  Email: v@yinqisen.cn

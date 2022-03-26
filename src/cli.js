@@ -37,12 +37,30 @@ module.exports = function (inputArgs) {
     return;
   }
 
+  // command: uapp help
   const cmd = args.argv.remain[0] || 'help';
   if (!cmd || cmd === 'help' || args.help) {
     printHelp();
     return;
   }
 
+  // command: uapp new
+  if (cmd === 'new') {
+    let projectName = args.argv.remain[1];
+    if (projectName) {
+      require('child_process').execSync('vue create -p dcloudio/uni-preset-vue ' + projectName, { stdio: 'inherit' });
+      return;
+    }
+  }
+
+  // command: uapp sdk init
+  if (cmd === 'sdk' && args.argv.remain[1] === 'init') {
+    sync(path.resolve(__dirname, '../uappsdk'), sdkHomeDir);
+    console.log(chalk.green('--- uappsdk 已安装 ---'));
+    return;
+  }
+
+  // check project
   let platform = fs.existsSync(path.join(appDir, 'Main/AppDelegate.m')) ? 'ios' : 'android';
   if (fs.existsSync(path.join(appDir, 'Main/AppDelegate.m'))) {
     platform = 'ios';
@@ -56,12 +74,7 @@ module.exports = function (inputArgs) {
     return;
   }
 
-  if (cmd === 'sdk' && args.argv.remain[1] === 'init') {
-    sync(path.resolve(__dirname, '../uappsdk'), sdkHomeDir);
-    console.log(chalk.green('------ uappsdk 已安装 ------'));
-    return;
-  }
-
+  // command: uapp prepare
   if (cmd == 'prepare') {
     manifestFile = path.join(appDir, 'manifest.json');
     manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
@@ -84,6 +97,7 @@ module.exports = function (inputArgs) {
     return;
   }
 
+  // command: uapp manifest {webapp/src}/manifest.json
   if (cmd === 'manifest') {
     let manifestFile = args.argv.remain[1] || 'manifest.json';
 
@@ -131,6 +145,40 @@ module.exports = function (inputArgs) {
 
     if (platform == 'ios') {
       processIOS();
+      return;
+    }
+  }
+
+  // command: uapp publish debug
+  if (cmd === 'publish' && args.argv.remain[1] === 'debug') {
+    if (platform === 'ios') {
+      // gererate uapp_debug.xcarchive
+      require('child_process').execSync(
+        'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "uapp-dev" -archivePath out/uapp_debug.xcarchive archive',
+        { stdio: 'inherit' }
+      );
+
+      // generate ipa
+      require('child_process').execSync(
+        'xcodebuild -exportArchive -archivePath out/uapp_debug.xcarchive -exportPath out -exportOptionsPlist config/export.plist',
+        { stdio: 'inherit' }
+      );
+
+      sync(
+        path.join(appDir, 'out/uapp-dev.ipa'),
+        path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/ios_debug.ipa')
+      );
+      return;
+    }
+
+    if (platform === 'android') {
+      let gradle = require('os').type === 'Windows_NT' ? './gradlew.bat' : './gradlew';
+      require('child_process').execSync(gradle + ' assembleDebug', { stdio: 'inherit' });
+
+      sync(
+        path.join(appDir, 'app/build/outputs/apk/debug/app-debug.apk'),
+        path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/android_debug.apk')
+      );
       return;
     }
   }
@@ -334,7 +382,7 @@ function processIOS() {
   replaceControlXml(path.join(appDir, 'Main/Resources/AppDev/control.xml'));
   replaceControlXml(path.join(appDir, 'Main/Resources/AppRelease/control.xml'));
 
-  let sdkLinkDir = path.join(appDir, '/../SDK');
+  let sdkLinkDir = path.join(appDir, '/SDKs/SDK');
   if (fs.existsSync(sdkLinkDir)) {
     fs.unlinkSync(sdkLinkDir);
   }
