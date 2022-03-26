@@ -25,7 +25,7 @@ uniapp 在线打包，一般无法满足灵活的需求，比如：
 1、 安装 uapp 命令
 
 ```
-npm install -g git@github.com:uappkit/uapp-cli.git
+npm install -g @uappkit/cli
 
 # 初始化或更新 uappsdk
 uapp sdk init
