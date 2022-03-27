@@ -101,7 +101,7 @@ uapp publish debug
 
 ## manifest.json 相关配置
 
-> 注意: `参数package, dcloud_appkey` 是 uapp 根据需要扩展出来的。
+> 注意: `uapp.* 参数` 是 uapp 根据需要扩展出来的, 非 dcloud 官方标准.
 
 原工程里的 `manifest.json` 内的参数，大多是给 hbuiderx 在线云打包用的。编译后生成的终极发布包，里面的 manifest.json 已被去除了无关数据，所以不用担心参数暴露问题。
 
