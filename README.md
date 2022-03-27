@@ -150,6 +150,24 @@ uapp publish debug
 
 <https://uniapp.dcloud.io/matter.html>
 
+## 快捷命令举例
+
+1. 官方 uniapp-cli 创建工程命令是 
+
+`vue create -p dcloudio/uni-preset-vue ${projectName}` 
+
+有点长，不太好记，使用 uapp 简化为：
+
+`uapp create ${projectName}`
+
+2. 编译并把调试基座安装到 HBuiderX 对应位置只需一条命令：
+
+`uapp publish debug`
+
+3. 把 HBuilderX 生成的本地打包APP资源复制过来
+
+`uapp prepare`
+
 ## uapp 使用帮助
 
 见 [doc/help.txt](doc/help.txt)
