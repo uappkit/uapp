@@ -109,7 +109,6 @@ uapp publish debug
 {
   "name": "uapp",
   "appid": "__UNI__ECA8F4D",
-  "description": "made by uapp",
   "versionName": "1.0.1",
   "versionCode": "1000000",
   "uapp": {
@@ -118,7 +117,8 @@ uapp publish debug
     "name": "μAppKit",
     "package": "com.code0xff.uapp",
     "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
-    "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92"
+    "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",
+    "info": "npm info @uappkit/cli"
   },
   "app-plus": {
     "distribute": {

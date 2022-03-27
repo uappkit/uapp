@@ -1,6 +1,6 @@
 {
   "name": "@uappkit/cli",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "uapp 让uniapp离线打包更简单高效",
   "main": "bin/uapp",
   "bin": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/uappkit/uapp-cli.git"
+    "url": "git+https://github.com/uappkit/cli.git"
   },
   "keywords": [
     "uapp",
@@ -28,9 +28,9 @@
     "update-notifier": "^5.1.0"
   },
   "bugs": {
-    "url": "https://github.com/uappkit/uapp-cli/issues"
+    "url": "https://github.com/uappkit/cli/issues"
   },
-  "homepage": "https://github.com/uappkit/uapp-cli#readme",
+  "homepage": "https://github.com/uappkit/cli#readme",
   "directories": {
     "doc": "doc"
   },
