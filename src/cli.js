@@ -97,7 +97,7 @@ module.exports = function (inputArgs) {
     return;
   }
 
-  // command: uapp manifest {webapp/src}/manifest.json
+  // command: uapp manifest ${webapp}/src/manifest.json
   if (cmd === 'manifest') {
     let manifestFile = args.argv.remain[1] || 'manifest.json';
 

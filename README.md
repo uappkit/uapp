@@ -88,7 +88,7 @@ uapp sdk init
 
 ```
 # 读取 manifest 中的配置，并更新基本信息
-uapp manifest {uni-app 工程目录}/src/manifest.json
+uapp manifest ${webapp}/src/manifest.json
 uapp manifest
 
 # 更新 HBuilderX 本地打包资源
@@ -158,7 +158,7 @@ uapp publish debug
 
 有点长，不太好记，使用 uapp 简化为：
 
-`uapp create ${projectName}`
+`uapp new ${projectName}`
 
 2. 编译并把调试基座安装到 HBuiderX 对应位置只需一条命令：
 
