@@ -133,7 +133,7 @@ module.exports = function (inputArgs) {
 
     console.log('当前使用 manifest: ' + manifestFile);
 
-    fs.lstatSync(localLinkManifest, { throwIfNoEntry: false }) && fs.unlinkSync(localLinkManifest);
+    fs.existsSync(localLinkManifest) && fs.lstatSync(localLinkManifest, { throwIfNoEntry: false }) && fs.unlinkSync(localLinkManifest);
     fs.symlinkSync(manifestFile, localLinkManifest);
     manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
     manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
@@ -172,7 +172,7 @@ module.exports = function (inputArgs) {
     }
 
     if (platform === 'android') {
-      let gradle = require('os').type === 'Windows_NT' ? './gradlew.bat' : './gradlew';
+      let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
       require('child_process').execSync(gradle + ' assembleDebug', { stdio: 'inherit' });
 
       sync(
