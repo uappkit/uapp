@@ -81,13 +81,13 @@ module.exports = function (inputArgs) {
     let compiledDir = path.join(
       path.dirname(fs.realpathSync(localLinkManifest)),
       'unpackage/resources/',
-      manifest['appid']
+      manifest.appid
     );
 
     let embedAppsDir = path.join(
       appDir,
       platform === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
-      manifest['appid']
+      manifest.appid
     );
 
     fs.existsSync(embedAppsDir) && fs.rmdirSync(embedAppsDir, { recursive: true });
@@ -112,31 +112,29 @@ module.exports = function (inputArgs) {
       console.log('uapp manifest ' + path.join(sdkHomeDir, 'templates/manifest.json'));
       return;
     }
-
-    let platform = fs.existsSync(path.join(appDir, 'Main/AppDelegate.m')) ? 'ios' : 'android';
-    if (fs.existsSync(path.join(appDir, 'Main/AppDelegate.m'))) {
-      platform = 'ios';
-    } else if (fs.existsSync(path.join(appDir, '/app/build.gradle'))) {
-      platform = 'android';
-    } else {
-      console.log('查看帮助: uapp -h');
-      console.log('uapp 命令必须在APP工程模板根目录下运行');
-      console.log('├─ android: https://github.com/uappkit/uapp-android');
-      console.log('└─ ios: https://github.com/uappkit/uapp-ios');
-      return;
-    }
-
-    if (!fs.existsSync(manifestFile)) {
-      console.log('无法找到 manifest.json: ' + manifestFile);
-      return;
-    }
-
     console.log('当前使用 manifest: ' + manifestFile);
 
-    fs.lstatSync(localLinkManifest, { throwIfNoEntry: false }) && fs.unlinkSync(localLinkManifest);
-    fs.symlinkSync(manifestFile, localLinkManifest);
+    if (fs.lstatSync(localLinkManifest, { throwIfNoEntry: false }).isSymbolicLink()) {
+      fs.unlinkSync(localLinkManifest);
+      fs.symlinkSync(manifestFile, localLinkManifest);
+    }
+
     manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
     manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
+
+    manifest.uapp.name = manifest.uapp[`${platform}.name`] || manifest.uapp.name || manifest.name;
+    manifest.uapp.package = manifest.uapp[`${platform}.package`] || manifest.uapp.package;
+    manifest.uapp.versionName = manifest.uapp[`${platform}.versionName`] || manifest.versionName;
+    manifest.uapp.versionCode = manifest.uapp[`${platform}.versionCode`] || manifest.versionCode;
+    manifest.uapp.appkey = manifest.uapp[`${platform}.appkey`];
+
+    console.log();
+    console.log('- appName     : ' + manifest.uapp.name);
+    console.log('- package     : ' + manifest.uapp.package);
+    console.log('- versionName : ' + manifest.uapp.versionName);
+    console.log('- versionCode : ' + manifest.uapp.versionCode);
+    console.log('- appKey      : ' + manifest.uapp.appkey);
+    console.log();
 
     if (platform == 'android') {
       processAndroid();
@@ -255,50 +253,23 @@ function stripJSONComments(data) {
  */
 
 function processAndroid() {
-  let packageName = manifest['uapp']['android.package'] || manifest['uapp']['package'];
   let wxEntryActivityFile = 'WXEntryActivity.java';
-
   let baseGradleFile = path.join(appDir, 'app/build.gradle');
   let content = fs.readFileSync(baseGradleFile, 'utf-8');
 
-  content = content.replace(/(applicationId ")(.*)(")/, '$1' + packageName + '$3');
-  content = content.replace(
-    /('app_name',\w+")(.*)(")/,
-    '$1' + (manifest['uapp']['android.name'] || manifest['uapp']['name'] || manifest.name) + '$3'
-  );
+  content = content.replace(/(applicationId\s+")(.*)(")/, '$1' + manifest.uapp.package + '$3');
+  content = content.replace(/(app_name[',\s]+")(.*)(")/, '$1' + manifest.uapp.name + '$3');
+  content = content.replace(/(versionCode\s+)(.*)/, '$1' + manifest.uapp.versionCode);
+  content = content.replace(/(versionName\s+")(.*)(")/, '$1' + manifest.uapp.versionName + '$3');
+  content = content.replace(/("DCLOUD_APPKEY"\s+:\s+")(.*)(",)/, '$1' + manifest.uapp.appkey + '$3');
 
   content = content.replace(
-    /(versionCode )(.*$)/,
-    '$1' + (manifest['uapp']['android.versionCode'] || manifest.versionCode)
-  );
-
-  content = content.replace(
-    /(versionName\w+")(.*)("$)/,
-    '$1' + (manifest['uapp']['android.versionName'] || manifest.versionName)
-  );
-
-  content = content.replace(
-    /('app_name',\w+")(.*)(")/,
-    '$1' + (manifest['uapp']['android.name'] || manifest['uapp']['name'] || manifest.name) + '$3'
-  );
-
-  content = content.replace(
-    /("DCLOUD_APPKEY"\w+:\w+")(.*)(",)/,
-    '$1' + (manifest['uapp']['ios.package'] || manifest['uapp']['package']) + '$3'
-  );
-
-  content = content.replace(
-    /("DCLOUD_APPKEY"\w+:\w+")(.*)(",)/,
-    '$1' + (manifest['uapp']['ios.package'] || manifest['uapp']['package']) + '$3'
-  );
-
-  content = content.replace(
-    /("WX_APPID"\w+:\w+")(.*)(",)/,
+    /("WX_APPID"\s+:\s+")(.*)(",)/,
     '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3'
   );
 
   content = content.replace(
-    /("WX_SECRET"\w+:\w+")(.*)(",)/,
+    /("WX_SECRET"\s+:\s+")(.*)(",)/,
     '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret + '$3'
   );
   fs.writeFileSync(baseGradleFile, content);
@@ -316,7 +287,7 @@ function processAndroid() {
   cleanEmptyFoldersRecursively(sourceDir);
 
   // DONT change content here
-  content = `package ${packageName}.wxapi;
+  content = `package ${manifest.uapp.package}.wxapi;
 import io.dcloud.feature.oauth.weixin.AbsWXCallbackActivity;
 
 public class WXEntryActivity extends AbsWXCallbackActivity {
@@ -326,7 +297,7 @@ public class WXEntryActivity extends AbsWXCallbackActivity {
   let replaceFile = path.join(
     appDir,
     'app/src/main/java/',
-    packageName.replace(/\./g, '/'),
+    manifest.uapp.package.replace(/\./g, '/'),
     'wxapi',
     wxEntryActivityFile
   );
@@ -354,24 +325,10 @@ function processIOS() {
   let baseYamlFile = path.join(appDir, 'config/base.yml');
   let content = fs.readFileSync(baseYamlFile, 'utf-8');
 
-  content = content.replace(
-    /(PRODUCT_BUNDLE_IDENTIFIER: )(.*$)/,
-    '$1' + (manifest['uapp']['ios.package'] || manifest['uapp']['package'])
-  );
-
-  content = content.replace(
-    /(MARKETING_VERSION: )(.*$)/,
-    '$1' + (manifest['uapp']['ios.versionName'] || manifest.versionName)
-  );
-
-  content = content.replace(
-    /(CURRENT_PROJECT_VERSION: )(.*$)/,
-    '$1' + (manifest['uapp']['ios.versionCode'] || manifest.versionCode)
-  );
+  content = content.replace(/(PRODUCT_BUNDLE_IDENTIFIER: )(.*)/, '$1' + manifest.uapp.package);
+  content = content.replace(/(MARKETING_VERSION: )(.*)/g, '$1' + manifest.uapp.versionName);
+  content = content.replace(/(CURRENT_PROJECT_VERSION: )(.*)/g, '$1' + manifest.uapp.versionCode);
   fs.writeFileSync(baseYamlFile, content);
-
-  // update name
-  manifest['name'] = manifest['uapp']['ios.name'] || manifest['uapp']['name'] || manifest['name'];
 
   replaceStoryboard(path.join(appDir, 'Main/Resources/LaunchScreen.storyboard'));
   replaceStoryboard(path.join(appDir, 'Main/Resources/LaunchScreenAD.storyboard'));
@@ -395,14 +352,14 @@ function processIOS() {
 function replaceStoryboard(storyboardFile) {
   let content = fs.readFileSync(storyboardFile, 'utf-8');
   var re = /(text=")(.+?)(".+)(?=uapp-launchscreen-appname)/;
-  content = content.replace(re, '$1' + manifest.name + '$3');
+  content = content.replace(re, '$1' + manifest.uapp.name + '$3');
   fs.writeFileSync(storyboardFile, content);
 }
 
 function replaceInfoPlist(plistFile) {
   let content = fs.readFileSync(plistFile, 'utf-8');
   let re = /(<key>dcloud_appkey<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
-  content = content.replace(re, '$1' + manifest['uapp']['ios.appkey'] + '$3');
+  content = content.replace(re, '$1' + manifest.uapp.appkey + '$3');
 
   // replace ios and wexin meanwhile
   re = /(<key>UniversalLinks<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
@@ -423,7 +380,7 @@ function replaceInfoPlist(plistFile) {
     process.exit(1);
   }
 
-  content = content.replace(re, '$1' + manifest.name + '$3');
+  content = content.replace(re, '$1' + manifest.uapp.name + '$3');
   fs.writeFileSync(plistFile, content);
 }
 
