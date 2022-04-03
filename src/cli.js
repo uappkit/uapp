@@ -112,12 +112,21 @@ module.exports = function (inputArgs) {
       console.log('uapp manifest ' + path.join(sdkHomeDir, 'templates/manifest.json'));
       return;
     }
-    console.log('当前使用 manifest: ' + manifestFile);
 
-    if (fs.lstatSync(localLinkManifest, { throwIfNoEntry: false }).isSymbolicLink()) {
-      fs.unlinkSync(localLinkManifest);
-      fs.symlinkSync(manifestFile, localLinkManifest);
+    let fstats = fs.lstatSync(localLinkManifest, { throwIfNoEntry: false });
+    if (fstats) {
+      if (fstats.isSymbolicLink()) {
+        fs.unlinkSync(localLinkManifest);
+      } else {
+        let backupName = 'manifest-' + new Date().getTime() + '.json';
+        console.log('注意：当前目录不要直接使用 manifest.json 文件, 已更名为: ' + backupName);
+        fs.renameSync(localLinkManifest, localLinkManifest.replace('manifest.json', backupName));
+        return;
+      }
     }
+
+    fs.symlinkSync(manifestFile, localLinkManifest);
+    console.log('当前使用 manifest: ' + manifestFile);
 
     manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
     manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
