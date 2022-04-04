@@ -25,7 +25,7 @@ uniapp 在线打包，一般无法满足灵活的需求，比如：
 1、 安装 uapp 命令
 
 ```
-npm install -g @uappkit/cli
+npm install -g uapp
 
 # 初始化或更新 uappsdk
 uapp sdk init
@@ -118,7 +118,7 @@ uapp publish debug
     "package": "com.code0xff.uapp",
     "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
     "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",
-    "info": "npm info @uappkit/cli"
+    "info": "npm info uapp"
   },
   "app-plus": {
     "distribute": {
