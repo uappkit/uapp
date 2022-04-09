@@ -5,7 +5,8 @@ uapp 使用方法:
     uapp sdk init
 
     2. 核心命令: 读取 manifest.json 配置, 并更新 android 或 ios 工程
-    uapp manifest ${webapp}/src/manifest.json
+    uapp manifest sync ${webapp}/src/manifest.json
+    uapp manifest info (仅查看信息, 不执行 sync)
 
     3. 复制 HBuilderX 生成的本地打包APP资源
     uapp prepare
@@ -13,16 +14,22 @@ uapp 使用方法:
     4. 发布离线打包基座到 HBuilderX 下
     uapp publish debug
 
-    5. 新建一个基于 uniapp-cli 的工程
+    5. 显示APP开发中会用到的配置信息
+    uapp info
+
+    6. 新建一个基于 uniapp-cli 的工程
     uapp new ${projectName}
 
     其他命令
+    uapp keygen (生成 Android 的签名文件 keystore)
     uapp -v 或 --version (查看 uapp 版本)
     uapp help 或 -h 或 --help (查看帮助)
 
 示例：
 
     uapp new ${projectName}
+    uapp manifest sync
+    uapp info
     uapp sdk init
     uapp -h
     uapp --version

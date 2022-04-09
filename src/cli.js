@@ -12,6 +12,8 @@ const path = require('path');
 const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
+const { conforms } = require('lodash');
+const { exit } = require('process');
 
 const knownOpts = {
   version: Boolean,
@@ -97,9 +99,11 @@ module.exports = function (inputArgs) {
     return;
   }
 
-  // command: uapp manifest ${webapp}/src/manifest.json
-  if (cmd === 'manifest') {
-    let manifestFile = args.argv.remain[1] || 'manifest.json';
+  // commands:
+  // uapp manifest sync ${webapp}/src/manifest.json
+  // uapp manifest info
+  if (cmd === 'manifest' && (args.argv.remain[1] === 'sync' || args.argv.remain[1] === 'info')) {
+    let manifestFile = args.argv.remain[2] || 'manifest.json';
 
     // check symlink
     if (manifestFile === 'manifest.json' && fs.lstatSync(localLinkManifest, { throwIfNoEntry: false })) {
@@ -138,12 +142,19 @@ module.exports = function (inputArgs) {
     manifest.uapp.appkey = manifest.uapp[`${platform}.appkey`];
 
     console.log();
+    console.log('- appid       : ' + manifest.appid);
     console.log('- appName     : ' + manifest.uapp.name);
     console.log('- package     : ' + manifest.uapp.package);
     console.log('- versionName : ' + manifest.uapp.versionName);
     console.log('- versionCode : ' + manifest.uapp.versionCode);
-    console.log('- appKey      : ' + manifest.uapp.appkey);
+    if (manifest.uapp.appkey) {
+      console.log('- appKey      : ' + manifest.uapp.appkey);
+    }
     console.log();
+
+    if (args.argv.remain[1] === 'info') {
+      return;
+    }
 
     if (platform == 'android') {
       processAndroid();
@@ -188,6 +199,64 @@ module.exports = function (inputArgs) {
       );
       return;
     }
+  }
+
+  // command: uapp jwt
+  if (cmd === 'jwt') {
+    printJWTToken();
+    return;
+  }
+
+  // command: uapp keygen
+  if (cmd === 'keygen') {
+    console.log('注意: ');
+    console.log('  build.gradle 中密码默认为 123456, 如有修改为其他密码，请对应修改 build.gradle 中的配置');
+    console.log('  建议此处密码继续使用 123456, 以减少修改, 且不会存在安全问题' + '\n');
+
+    let keyFile = path.join(appDir, 'app/app.keystore');
+    let keyCommand = 'keytool -genkey -alias key0 -keyalg RSA -keysize 2048 -validity 36500 -keystore ' + keyFile;
+
+    require('child_process').execSync(keyCommand, { stdio: 'inherit' });
+    return;
+  }
+
+  // command: uapp info, uapp info jwt, uapp info key
+  if (
+    cmd === 'info' &&
+    (!args.argv.remain[1] ||
+      (platform === 'ios' && args.argv.remain[1] === 'jwt') ||
+      (platform === 'android' && args.argv.remain[1] === 'key'))
+  ) {
+    if (!args.argv.remain[1]) {
+      require('child_process').execSync('uapp manifest info', { stdio: 'inherit' });
+    }
+
+    if (platform === 'ios') {
+      printJWTToken();
+      return;
+    }
+
+    // for android
+    manifest = JSON.parse(stripJSONComments(fs.readFileSync(path.resolve('manifest.json'), 'utf8')));
+    let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
+    let output = require('child_process')
+      .execSync(gradle + ' app:signingReport')
+      .toString();
+    let r = output.match(/Variant: release[\s\S]+?----------/);
+
+    let md5 = r[0].match(/MD5: (.+)/)[1].replace(/:/g, '');
+    let sha1 = r[0].match(/SHA1: (.+)/)[1];
+    console.log('👇 应用签名 (MD5), 用于微信开放平台:');
+    console.log(md5);
+    console.log();
+    console.log('👇 Android 证书签名 (SHA1), 用于离线打包 Key:');
+    console.log(sha1);
+    console.log('https://dev.dcloud.net.cn/app/build-config?appid=' + manifest.appid);
+
+    console.log();
+    console.log('----------');
+    console.log(r[0]);
+    return;
   }
 
   printHelp();
@@ -398,6 +467,49 @@ function replaceControlXml(xmlFile) {
   let re = /(app appid=")(.+?)(")/g;
   content = content.replace(re, '$1' + manifest.appid + '$3');
   fs.writeFileSync(xmlFile, content);
+}
+
+// generate jwt token for apple oauth login
+function printJWTToken() {
+  console.log('------ JWT Token ------');
+  try {
+    let config = require(path.join(appDir, 'jwt/config.json'));
+
+    if (!config.team_id) {
+      let content = fs.readFileSync(path.join(appDir, 'config/custom.yml'), 'utf-8');
+      let r = content.match(/DEVELOPMENT_TEAM:\s+(.*)/);
+      config.team_id = r[1] || '';
+    }
+
+    if (!config.team_id) {
+      throw '请在 jwt/config.json 中设置 team_id';
+    }
+
+    let privateKey = fs.readFileSync(path.join(appDir, 'jwt/key.txt'));
+    let headers = { kid: config.key_id };
+    let timestamp = Math.floor(Date.now() / 1000);
+    let claims = {
+      iss: config.team_id,
+      iat: timestamp,
+      exp: timestamp + 86400 * 180,
+      aud: 'https://appleid.apple.com',
+      sub: config.client_id,
+    };
+
+    const jwt = require('jsonwebtoken');
+    let token = jwt.sign(claims, privateKey, { algorithm: 'ES256' }, { header: headers });
+    console.log(token);
+  } catch (error) {
+    console.log('✨解析出错✨, jwt/config.json 内容示例: ');
+    console.log(`
+{
+    "team_id": "3DSM494K6L",
+    "client_id": "com.code0xff.uapp.login",
+    "key_id": "3C7FMSZC8Z"
+}
+    `);
+    console.log('👉 参考教程: http://help.jwt.code0xff.com');
+  }
 }
 
 function printHelp() {

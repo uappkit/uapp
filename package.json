@@ -1,6 +1,6 @@
 {
   "name": "uapp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "uapp 让uniapp离线打包更简单高效",
   "main": "bin/uapp",
   "bin": {
@@ -23,6 +23,7 @@
     "chalk": "^0.5.1",
     "chokidar": "^3.5.3",
     "fs-extra": "^10.0.1",
+    "jsonwebtoken": "^8.5.1",
     "lodash": ">=4.17.21",
     "nopt": "^5.0.0",
     "update-notifier": "^5.1.0"

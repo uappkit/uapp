@@ -88,8 +88,8 @@ uapp sdk init
 
 ```
 # 读取 manifest 中的配置，并更新基本信息
-uapp manifest ${webapp}/src/manifest.json
-uapp manifest
+uapp manifest info
+uapp manifest sync ${webapp}/src/manifest.json
 
 # 更新 HBuilderX 本地打包资源
 # 如果通过 HBuilderX 重新编译，或者通过 uniapp-cli 命令重新编译的资源，可以通过 prepare 命令更新到离线 APP 工程中，用于 APP 重新打包发布。
