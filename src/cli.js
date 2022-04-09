@@ -12,8 +12,6 @@ const path = require('path');
 const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
-const { conforms } = require('lodash');
-const { exit } = require('process');
 
 const knownOpts = {
   version: Boolean,
