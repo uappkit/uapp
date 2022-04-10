@@ -1,35 +1,43 @@
 
-uapp 使用方法: 
+uapp 通用命令🔥
 
-    1. 初始化或更新 uappsdk
+  - 初始化或更新 uappsdk
     uapp sdk init
 
-    2. 核心命令: 读取 manifest.json 配置, 并更新 android 或 ios 工程
+  - 生成的签名文件 app.keystore
+    uapp keygen
+
+  - 显示APP开发中会用到的配置信息
+    uapp info [jwt|key] (不指定 jwt|key 会自动判断)
+
+  - 新建一个基于 uniapp-cli 的工程
+    uapp new ${projectName}
+
+需在工程模板下运行命令☘️
+
+  - 核心命令: 读取 manifest.json 配置, 并更新 android 或 ios 工程
     uapp manifest sync ${webapp}/src/manifest.json
     uapp manifest info (仅查看信息, 不执行 sync)
 
-    3. 复制 HBuilderX 生成的本地打包APP资源
+  - 复制 HBuilderX 生成的本地打包APP资源
     uapp prepare
 
-    4. 发布离线打包基座到 HBuilderX 下
+  - 发布离线打包基座到 HBuilderX 下
     uapp publish debug
 
-    5. 显示APP开发中会用到的配置信息
-    uapp info
+其他命令:
 
-    6. 新建一个基于 uniapp-cli 的工程
-    uapp new ${projectName}
-
-    其他命令
-    uapp keygen (生成 Android 的签名文件 keystore)
     uapp -v 或 --version (查看 uapp 版本)
     uapp help 或 -h 或 --help (查看帮助)
 
-示例：
+示例:
 
-    uapp new ${projectName}
-    uapp manifest sync
-    uapp info
-    uapp sdk init
+    uapp keygen
+    uapp info jwt
     uapp -h
     uapp --version
+
+工程模板代码位置:
+
+    👉 https://github.com/uappkit/uapp-android
+    👉 https://github.com/uappkit/uapp-ios

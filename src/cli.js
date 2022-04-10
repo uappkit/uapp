@@ -61,23 +61,69 @@ module.exports = function (inputArgs) {
   }
 
   // check project
-  let platform = fs.existsSync(path.join(appDir, 'Main/AppDelegate.m')) ? 'ios' : 'android';
+  let projectType = fs.existsSync(path.join(appDir, 'Main/AppDelegate.m')) ? 'ios' : 'android';
   if (fs.existsSync(path.join(appDir, 'Main/AppDelegate.m'))) {
-    platform = 'ios';
+    projectType = 'ios';
   } else if (fs.existsSync(path.join(appDir, '/app/build.gradle'))) {
-    platform = 'android';
+    projectType = 'android';
   } else {
-    console.log('查看帮助: uapp -h');
-    console.log('uapp 命令必须在APP工程模板根目录下运行');
-    console.log('├─ android: https://github.com/uappkit/uapp-android');
-    console.log('└─ ios: https://github.com/uappkit/uapp-ios');
+    projectType = 'unknown';
+  }
+
+  // command: uapp keygen
+  if (cmd === 'keygen') {
+    if (projectType === 'android') {
+      console.log('注意: ');
+      console.log('build.gradle 中密码默认为 123456, 如有修改为其他密码，请对应修改 build.gradle 中的配置');
+    }
+    console.log('需要输入两次6位密码, 例如输入密码: 123456\n');
+
+    let keyFile = path.join(appDir, 'app/app.keystore');
+    fs.mkdirSync(path.dirname(keyFile), { recursive: true });
+
+    try {
+      let keyCommand =
+        'keytool -genkey -alias key0 -keyalg RSA -keysize 2048 -validity 36500 -dname "CN=uapp" -keystore ' + keyFile;
+      require('child_process').execSync(keyCommand, { stdio: 'inherit' });
+      console.log('\n证书生成位置: ' + keyFile);
+    } catch (error) {
+      console.log('\n错误解决方法, 改名已存在的文件: ' + keyFile);
+    }
+
+    return;
+  }
+
+  // command: uapp info, uapp info jwt, uapp info key
+  if (cmd === 'info' && (!args.argv.remain[1] || args.argv.remain[1] === 'jwt' || args.argv.remain[1] === 'key')) {
+    if (projectType !== 'unknown' && fs.existsSync(localLinkManifest)) {
+      require('child_process').execSync('uapp manifest info', { stdio: 'inherit' });
+    }
+
+    if (projectType === 'ios' || args.argv.remain[1] === 'jwt') {
+      printJWTToken();
+      return;
+    }
+
+    let keyFile = path.join(appDir, 'app/app.keystore');
+    if (!fs.existsSync(keyFile)) {
+      console.log('找不到 keystore 签名文件: ' + keyFile);
+      return;
+    }
+
+    let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
+    if (!fs.existsSync(path.resolve(gradle))) {
+      console.log('找不到 gradle 命令: ' + gradle);
+      return;
+    }
+
+    printAndroidKeyInfo(gradle);
     return;
   }
 
   // command: uapp prepare
   if (cmd == 'prepare') {
-    manifestFile = path.join(appDir, 'manifest.json');
-    manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
+    checkManifest();
+    manifest = getManifest();
     let compiledDir = path.join(
       path.dirname(fs.realpathSync(localLinkManifest)),
       'unpackage/resources/',
@@ -86,7 +132,7 @@ module.exports = function (inputArgs) {
 
     let embedAppsDir = path.join(
       appDir,
-      platform === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
+      projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
       manifest.appid
     );
 
@@ -111,7 +157,7 @@ module.exports = function (inputArgs) {
     if (!fs.existsSync(manifestFile)) {
       console.log('找不到: ' + manifestFile);
       console.log('如需测试，可以使用 manifest 模板: ');
-      console.log('uapp manifest ' + path.join(sdkHomeDir, 'templates/manifest.json'));
+      console.log('uapp manifest sync ' + path.join(sdkHomeDir, 'templates/manifest.json'));
       return;
     }
 
@@ -130,14 +176,14 @@ module.exports = function (inputArgs) {
     fs.symlinkSync(manifestFile, localLinkManifest);
     console.log('当前使用 manifest: ' + manifestFile);
 
-    manifest = JSON.parse(stripJSONComments(fs.readFileSync(manifestFile, 'utf8')));
+    manifest = getManifest();
     manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
 
-    manifest.uapp.name = manifest.uapp[`${platform}.name`] || manifest.uapp.name || manifest.name;
-    manifest.uapp.package = manifest.uapp[`${platform}.package`] || manifest.uapp.package;
-    manifest.uapp.versionName = manifest.uapp[`${platform}.versionName`] || manifest.versionName;
-    manifest.uapp.versionCode = manifest.uapp[`${platform}.versionCode`] || manifest.versionCode;
-    manifest.uapp.appkey = manifest.uapp[`${platform}.appkey`];
+    manifest.uapp.name = manifest.uapp[`${projectType}.name`] || manifest.uapp.name || manifest.name;
+    manifest.uapp.package = manifest.uapp[`${projectType}.package`] || manifest.uapp.package;
+    manifest.uapp.versionName = manifest.uapp[`${projectType}.versionName`] || manifest.versionName;
+    manifest.uapp.versionCode = manifest.uapp[`${projectType}.versionCode`] || manifest.versionCode;
+    manifest.uapp.appkey = manifest.uapp[`${projectType}.appkey`];
 
     console.log();
     console.log('- appid       : ' + manifest.appid);
@@ -150,24 +196,24 @@ module.exports = function (inputArgs) {
     }
     console.log();
 
-    if (args.argv.remain[1] === 'info') {
-      return;
-    }
-
-    if (platform == 'android') {
+    if (projectType == 'android') {
       processAndroid();
       return;
     }
 
-    if (platform == 'ios') {
+    if (projectType == 'ios') {
       processIOS();
       return;
     }
+
+    return;
   }
 
   // command: uapp publish debug
   if (cmd === 'publish' && args.argv.remain[1] === 'debug') {
-    if (platform === 'ios') {
+    checkManifest();
+
+    if (projectType === 'ios') {
       // gererate uapp_debug.xcarchive
       require('child_process').execSync(
         'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "uapp-dev" -archivePath out/uapp_debug.xcarchive archive',
@@ -187,8 +233,8 @@ module.exports = function (inputArgs) {
       return;
     }
 
-    if (platform === 'android') {
-      let gradle = require('os').type === 'Windows_NT' ? './gradlew.bat' : './gradlew';
+    if (projectType === 'android') {
+      let gradle = process.platform === 'win32' ? './gradlew.bat' : './gradlew';
       require('child_process').execSync(gradle + ' assembleDebug', { stdio: 'inherit' });
 
       sync(
@@ -197,63 +243,8 @@ module.exports = function (inputArgs) {
       );
       return;
     }
-  }
 
-  // command: uapp jwt
-  if (cmd === 'jwt') {
-    printJWTToken();
-    return;
-  }
-
-  // command: uapp keygen
-  if (cmd === 'keygen') {
-    console.log('注意: ');
-    console.log('  build.gradle 中密码默认为 123456, 如有修改为其他密码，请对应修改 build.gradle 中的配置');
-    console.log('  建议此处密码继续使用 123456, 以减少修改, 且不会存在安全问题' + '\n');
-
-    let keyFile = path.join(appDir, 'app/app.keystore');
-    let keyCommand = 'keytool -genkey -alias key0 -keyalg RSA -keysize 2048 -validity 36500 -keystore ' + keyFile;
-
-    require('child_process').execSync(keyCommand, { stdio: 'inherit' });
-    return;
-  }
-
-  // command: uapp info, uapp info jwt, uapp info key
-  if (
-    cmd === 'info' &&
-    (!args.argv.remain[1] ||
-      (platform === 'ios' && args.argv.remain[1] === 'jwt') ||
-      (platform === 'android' && args.argv.remain[1] === 'key'))
-  ) {
-    if (!args.argv.remain[1]) {
-      require('child_process').execSync('uapp manifest info', { stdio: 'inherit' });
-    }
-
-    if (platform === 'ios') {
-      printJWTToken();
-      return;
-    }
-
-    // for android
-    manifest = JSON.parse(stripJSONComments(fs.readFileSync(path.resolve('manifest.json'), 'utf8')));
-    let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
-    let output = require('child_process')
-      .execSync(gradle + ' app:signingReport')
-      .toString();
-    let r = output.match(/Variant: release[\s\S]+?----------/);
-
-    let md5 = r[0].match(/MD5: (.+)/)[1].replace(/:/g, '');
-    let sha1 = r[0].match(/SHA1: (.+)/)[1];
-    console.log('👇 应用签名 (MD5), 用于微信开放平台:');
-    console.log(md5);
-    console.log();
-    console.log('👇 Android 证书签名 (SHA1), 用于离线打包 Key:');
-    console.log(sha1);
-    console.log('https://dev.dcloud.net.cn/app/build-config?appid=' + manifest.appid);
-
-    console.log();
-    console.log('----------');
-    console.log(r[0]);
+    console.log('无法识别的工程模板，请参考帮助');
     return;
   }
 
@@ -322,6 +313,22 @@ function cleanEmptyFoldersRecursively(folder) {
 function stripJSONComments(data) {
   data = data.replace(new RegExp('\\s+//(.*)', 'g'), '');
   return data.replace(/\/\*(.*?)\*\//gu, '');
+}
+
+function checkManifest()
+{
+  if (!fs.existsSync(localLinkManifest)) {
+    console.log('请先执行 `uapp manifest sync` 指定 manifest.json 文件');
+    process.exit(-1);
+  }
+}
+
+function getManifest() {
+  if (fs.existsSync(localLinkManifest)) {
+    let content = fs.readFileSync(localLinkManifest, 'utf8');
+    manifest = JSON.parse(stripJSONComments(content));
+  }
+  return manifest;
 }
 
 /*
@@ -498,7 +505,8 @@ function printJWTToken() {
     let token = jwt.sign(claims, privateKey, { algorithm: 'ES256' }, { header: headers });
     console.log(token);
   } catch (error) {
-    console.log('✨解析出错✨, jwt/config.json 内容示例: ');
+    console.log(error.message + '\n');
+    console.log('jwt/config.json 内容参考: ');
     console.log(`
 {
     "team_id": "3DSM494K6L",
@@ -506,8 +514,35 @@ function printJWTToken() {
     "key_id": "3C7FMSZC8Z"
 }
     `);
+
     console.log('👉 参考教程: http://help.jwt.code0xff.com');
   }
+}
+
+function printAndroidKeyInfo(gradle) {
+  manifest = getManifest();
+
+  let output = require('child_process')
+    .execSync(gradle + ' app:signingReport')
+    .toString();
+  let r = output.match(/Variant: release[\s\S]+?----------/);
+
+  let md5 = r[0].match(/MD5: (.+)/)[1].replace(/:/g, '');
+  let sha1 = r[0].match(/SHA1: (.+)/)[1];
+  console.log('👇 应用签名 (MD5), 用于微信开放平台:');
+  console.log(md5);
+  console.log();
+  console.log('👇 Android 证书签名 (SHA1), 用于离线打包 Key:');
+  console.log(sha1);
+
+  // for uniapp project
+  if (manifest) {
+    console.log('https://dev.dcloud.net.cn/app/build-config?appid=' + manifest.appid);
+  }
+
+  console.log();
+  console.log('----------');
+  console.log(r[0]);
 }
 
 function printHelp() {
