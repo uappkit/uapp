@@ -150,7 +150,7 @@ module.exports = function (inputArgs) {
     let manifestFile = args.argv.remain[2] || 'manifest.json';
 
     // check symlink
-    if (manifestFile === 'manifest.json' && fs.lstatSync(localLinkManifest, { throwIfNoEntry: false })) {
+    if (manifestFile === 'manifest.json') {
       manifestFile = fs.realpathSync(localLinkManifest);
     }
 
@@ -161,8 +161,8 @@ module.exports = function (inputArgs) {
       return;
     }
 
-    let fstats = fs.lstatSync(localLinkManifest, { throwIfNoEntry: false });
-    if (fstats) {
+    try {
+      let fstats = fs.lstatSync(localLinkManifest);
       if (fstats.isSymbolicLink()) {
         fs.unlinkSync(localLinkManifest);
       } else {
@@ -171,7 +171,7 @@ module.exports = function (inputArgs) {
         fs.renameSync(localLinkManifest, localLinkManifest.replace('manifest.json', backupName));
         return;
       }
-    }
+    } catch (error) {}
 
     fs.symlinkSync(manifestFile, localLinkManifest);
     console.log('当前使用 manifest: ' + manifestFile);
@@ -315,8 +315,7 @@ function stripJSONComments(data) {
   return data.replace(/\/\*(.*?)\*\//gu, '');
 }
 
-function checkManifest()
-{
+function checkManifest() {
   if (!fs.existsSync(localLinkManifest)) {
     console.log('请先执行 `uapp manifest sync` 指定 manifest.json 文件');
     process.exit(-1);
