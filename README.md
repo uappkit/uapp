@@ -74,13 +74,13 @@ uapp sdk init
 
 <https://nativesupport.dcloud.net.cn/AppDocs/usemodule/iOSModuleConfig/common>
 
-## 下载离线打包工程模板
+## 下载离线打包工程源码
 
-### 1. 下载 Android 离线工程模板
+### 1. 下载 Android 离线工程源码
 
 见 [doc/uapp-android.md](doc/uapp-android.md)
 
-### 2. 下载 iOS 离线工程模板
+### 2. 下载 iOS 离线工程源码
 
 见 [doc/uapp-ios.md](doc/uapp-ios.md)
 

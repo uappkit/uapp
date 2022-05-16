@@ -11,6 +11,6 @@
     └── src
 ```
 
-### 下载 android 离线工程模板
+### 下载 android 离线工程源码
 
 `git clone https://github.com/uappkit/uapp-android.git`

@@ -27,7 +27,7 @@ iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适
 └── uapp.xcodeproj
 ```
 
-### 下载 ios 离线工程模板
+### 下载 ios 离线工程源码
 
 `git clone https://github.com/uappkit/uapp-ios.git`
 
