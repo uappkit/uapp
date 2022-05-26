@@ -1,6 +1,17 @@
-## uapp
+## uapp 是啥?
 
-uapp 让uniapp离线打包更简单高效。
+uapp不等同于uniapp，uapp是解决uniapp开发痛点并提升其开发效率的命令行工具。类似于cordova, ionic, expo的作用。uapp还包含 uapp-android, uapp-ios 两个平台的模板代码。
+
+开发过程中，我们经常会遭遇如下痛点:
+
+* 开起一个新项目，通常要修改工程里的很多参数，比如app的名称，版本号, dcloud_key, 微信相关的 appkey 等，人工不仅繁琐，还容易出错，使用 `uapp manifest sync` 一步搞定。
+* APP发布和开发调试时的配置不完全相同，比如你不能把 debug-server-release.aar 这种调试相关的库发布，那就需要把发布和开发的配置隔离开，uapp已经帮你做好隔离配置，并且很方便通过jenkins实现发布流程的自动化集成，即使不需要也好过手动改来改去，把自己都改晕了。
+* 自己编译个调试基座，还需要手动 COPY 到 HBuilderX 下？用 `uapp publish debug` 自动编译一步搞定。
+* HBuilderX 编译好的本地APP资源，还需要手动 COPY 到工程里? 用 `uapp prepare` 一步搞定。
+* 微信开发者平台，[DCloud 开发者中心](http://dev.dcloud.net.cn) 都需要的签名信息怎么查看，`uapp info` 一步搞定。
+* uniapp-cli 创建新工程的命令是啥了的，没记住，`uapp new xxx` 一步搞定。
+
+**uniapp 是啥?**
 
 uniapp是一个基于Vue同构技术的多平台前端框架，对公司或创业者来说，只需要有一个会Vue的前端，就可以同时写App(android/ios)，H5，快应用，微信/QQ/抖音/飞书/百度/支付宝等各家小程序，维护一套代码可以发布10多个平台。有以下几大好处：
 
@@ -99,7 +110,7 @@ uapp manifest sync ${webapp}/src/manifest.json
 # 如果通过 HBuilderX 重新编译，或者通过 uniapp-cli 命令重新编译的资源，可以通过 prepare 命令更新到离线 APP 工程中，用于 APP 重新打包发布。
 uapp prepare
 
-# 发布离线打包基座到 HBuilderX 下
+# 编译并发布自定义基座到 HBuilderX 下
 uapp publish debug
 ```
 
@@ -153,24 +164,6 @@ uapp publish debug
 ## 跨端开发注意事项
 
 <https://uniapp.dcloud.io/matter.html>
-
-## 快捷命令举例
-
-1. 官方 uniapp-cli 创建工程命令是 
-
-`vue create -p dcloudio/uni-preset-vue ${projectName}` 
-
-有点长，不太好记，使用 uapp 简化为：
-
-`uapp new ${projectName}`
-
-2. 编译并把调试基座安装到 HBuiderX 对应位置只需一条命令：
-
-`uapp publish debug`
-
-3. 把 HBuilderX 生成的本地打包APP资源复制过来
-
-`uapp prepare`
 
 ## iOS 苹果授权登录
 

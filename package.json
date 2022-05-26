@@ -1,7 +1,7 @@
 {
   "name": "uapp",
-  "version": "2.1.2",
-  "description": "uapp 让uniapp离线打包更简单高效",
+  "version": "2.1.3",
+  "description": "uapp不等同于uniapp, uapp是解决uniapp开发痛点并提升其开发效率的命令行工具. 类似于cordova, ionic, expo的作用",
   "main": "bin/uapp",
   "bin": {
     "uapp": "bin/uapp"
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/uappkit/cli.git"
+    "url": "git+https://github.com/uappkit/uapp.git"
   },
   "keywords": [
     "uapp",
@@ -29,9 +29,9 @@
     "update-notifier": "^5.1.0"
   },
   "bugs": {
-    "url": "https://github.com/uappkit/cli/issues"
+    "url": "https://github.com/uappkit/uapp/issues"
   },
-  "homepage": "https://github.com/uappkit/cli#readme",
+  "homepage": "https://github.com/uappkit/uapp#readme",
   "directories": {
     "doc": "doc"
   },
