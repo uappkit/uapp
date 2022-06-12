@@ -1,7 +1,7 @@
 {
   "name": "uapp",
-  "version": "2.1.3",
-  "description": "uapp不等同于uniapp, uapp是解决uniapp开发痛点并提升其开发效率的命令行工具. 类似于cordova, ionic, expo的作用",
+  "version": "2.1.4",
+  "description": "uapp是解决uniapp开发痛点并提升其开发效率的命令行工具. 类似于cordova, ionic, expo的作用",
   "main": "bin/uapp",
   "bin": {
     "uapp": "bin/uapp"

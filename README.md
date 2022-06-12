@@ -1,6 +1,6 @@
 ## uapp 是啥?
 
-uapp不等同于uniapp，uapp是解决uniapp开发痛点并提升其开发效率的命令行工具。类似于cordova, ionic, expo的作用。uapp还包含 uapp-android, uapp-ios 两个平台的模板代码。
+uapp是解决uniapp开发痛点并提升其开发效率的命令行工具。类似于cordova, ionic, expo的作用。uapp还包含 uapp-android, uapp-ios 两个平台的模板代码。
 
 开发过程中，我们经常会遭遇如下痛点:
 
