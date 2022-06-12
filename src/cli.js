@@ -48,7 +48,12 @@ module.exports = function (inputArgs) {
   if (cmd === 'new') {
     let projectName = args.argv.remain[1];
     if (projectName) {
-      require('child_process').execSync('vue create -p dcloudio/uni-preset-vue ' + projectName, { stdio: 'inherit' });
+      try {
+        require('child_process').execSync('vue create -p dcloudio/uni-preset-vue ' + projectName, { stdio: 'inherit' });
+      } catch (error) {
+        console.log('请先安装 vue 环境:')
+        console.log('npm i -g @vue/cli');
+      }
       return;
     }
   }
