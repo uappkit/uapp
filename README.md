@@ -97,8 +97,6 @@ uapp sdk init
 
 iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适合 DCloud离线SDK 的发布形式。经过我们在产品中的不断实践，最终选择了 XCodeGen。
 
-> uapp-ios 模板暂时未开放，如有需要可通过文档末尾的联系方式加我，把 github 账号发给我，并不需要任何费用
-
 ### 3. 工程下常见命令
 
 ```
@@ -187,10 +185,6 @@ uapp publish debug
 
 见 [doc/help.txt](doc/help.txt)
 
-## 技术问题加群
+## License
 
-  遇到技术问题，可加微信入群交流
-
-  微信：yinqisen
-
-  Email: v@yinqisen.cn
+The Apache License 2. Please see [License File](LICENSE.md) for more information.
