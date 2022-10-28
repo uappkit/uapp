@@ -221,7 +221,7 @@ module.exports = function (inputArgs) {
     if (projectType === 'ios') {
       // gererate uapp_debug.xcarchive
       require('child_process').execSync(
-        'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "uapp-dev" -archivePath out/uapp_debug.xcarchive archive',
+        'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive',
         { stdio: 'inherit' }
       );
 
@@ -232,7 +232,7 @@ module.exports = function (inputArgs) {
       );
 
       sync(
-        path.join(appDir, 'out/uapp-dev.ipa'),
+        path.join(appDir, 'out/HBuilder.ipa'),
         path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/ios_debug.ipa')
       );
       return;
