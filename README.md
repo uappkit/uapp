@@ -1,4 +1,4 @@
-## uapp 是啥?
+## 了解 uapp
 
 uapp是解决uniapp开发痛点并提升其开发效率的命令行工具。类似于cordova, ionic, expo的作用。uapp还包含 uapp-android, uapp-ios 两个平台的模板代码。
 
@@ -11,7 +11,9 @@ uapp是解决uniapp开发痛点并提升其开发效率的命令行工具。类�
 * 微信开发者平台，[DCloud 开发者中心](http://dev.dcloud.net.cn) 都需要的签名信息怎么查看，`uapp info` 一步搞定。
 * uniapp-cli 创建新工程的命令是啥了的，没记住，`uapp new xxx` 一步搞定。
 
-**uniapp 是啥?**
+**uniapp 用一套代码，运行到多个平台**
+
+![](https://vkceyugu.cdn.bspapp.com/VKCEYUGU-a90b5f95-90ba-4d30-a6a7-cd4d057327db/ec6e95dd-77ad-4d14-aafa-ca503f5b9e53.jpg)
 
 uniapp是一个基于Vue同构技术的多平台前端框架，对公司或创业者来说，只需要有一个会Vue的前端，就可以同时写App(android/ios)，H5，快应用，微信/QQ/抖音/飞书/百度/支付宝等各家小程序，维护一套代码可以发布10多个平台。有以下几大好处：
 

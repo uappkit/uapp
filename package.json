@@ -1,6 +1,6 @@
 {
   "name": "uapp",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "uapp是解决uniapp开发痛点并提升其开发效率的命令行工具. 类似于cordova, ionic, expo的作用",
   "main": "bin/uapp",
   "bin": {
@@ -35,5 +35,12 @@
   "directories": {
     "doc": "doc"
   },
-  "author": "Qisen"
+  "author": "Qisen",
+  "license": "Apache-2.0",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ]
 }
