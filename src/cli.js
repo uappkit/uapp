@@ -51,7 +51,7 @@ module.exports = function (inputArgs) {
       try {
         require('child_process').execSync('vue create -p dcloudio/uni-preset-vue ' + projectName, { stdio: 'inherit' });
       } catch (error) {
-        console.log('请先安装 vue 环境:')
+        console.log('请先安装 vue 环境:');
         console.log('npm i -g @vue/cli');
       }
       return;
@@ -341,6 +341,8 @@ function getManifest() {
 
 function processAndroid() {
   let wxEntryActivityFile = 'WXEntryActivity.java';
+  let wXPayEntryActivityFile = 'WXPayEntryActivity.java';
+
   let baseGradleFile = path.join(appDir, 'app/build.gradle');
   let content = fs.readFileSync(baseGradleFile, 'utf-8');
 
@@ -361,36 +363,42 @@ function processAndroid() {
   );
   fs.writeFileSync(baseGradleFile, content);
 
-  let templateFile = path.join(sdkHomeDir, 'templates/android/app/wxapi', wxEntryActivityFile);
-  // remove WXEntryActivity.java first, then copy
   let sourceDir = path.join(appDir, 'app/src/main/java/');
-  getFiles(sourceDir).forEach((file) => {
-    if (file.endsWith(wxEntryActivityFile)) {
-      fs.unlinkSync(file);
-    }
-  });
+  for (const entryFile of [wxEntryActivityFile, wXPayEntryActivityFile]) {
+    getFiles(sourceDir).forEach((file) => {
+      file.endsWith(entryFile) && fs.unlinkSync(file);
+    });
+  }
 
   // cleanup empty folder
   cleanEmptyFoldersRecursively(sourceDir);
 
   // DONT change content here
-  content = `package ${manifest.uapp.package}.wxapi;
+  let contentOfEntryFiles = {
+    [wxEntryActivityFile]: `package ${manifest.uapp.package}.wxapi;
 import io.dcloud.feature.oauth.weixin.AbsWXCallbackActivity;
-
 public class WXEntryActivity extends AbsWXCallbackActivity {
-
 }
-`;
-  let replaceFile = path.join(
-    appDir,
-    'app/src/main/java/',
-    manifest.uapp.package.replace(/\./g, '/'),
-    'wxapi',
-    wxEntryActivityFile
-  );
+`,
+    [wXPayEntryActivityFile]: `package ${manifest.uapp.package}.wxapi;
+import io.dcloud.feature.payment.weixin.AbsWXPayCallbackActivity;
+public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
+}
+`,
+  };
 
-  fs.mkdirSync(path.dirname(replaceFile), { recursive: true });
-  fs.writeFileSync(replaceFile, content);
+  for (const entryFile of [wxEntryActivityFile, wXPayEntryActivityFile]) {
+    let replaceFile = path.join(
+      appDir,
+      'app/src/main/java/',
+      manifest.uapp.package.replace(/\./g, '/'),
+      'wxapi',
+      entryFile
+    );
+
+    fs.mkdirSync(path.dirname(replaceFile), { recursive: true });
+    fs.writeFileSync(replaceFile, contentOfEntryFiles[entryFile]);
+  }
 
   replaceControlXml(path.join(appDir, 'app/src/debug/assets/data/dcloud_control.xml'));
   replaceControlXml(path.join(appDir, 'app/src/main/assets/data/dcloud_control.xml'));
