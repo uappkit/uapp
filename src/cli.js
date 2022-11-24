@@ -66,13 +66,11 @@ module.exports = function (inputArgs) {
   }
 
   // check project
-  let projectType = fs.existsSync(path.join(appDir, 'Main/AppDelegate.m')) ? 'ios' : 'android';
+  let projectType = 'unknown';
   if (fs.existsSync(path.join(appDir, 'Main/AppDelegate.m'))) {
     projectType = 'ios';
   } else if (fs.existsSync(path.join(appDir, '/app/build.gradle'))) {
     projectType = 'android';
-  } else {
-    projectType = 'unknown';
   }
 
   // command: uapp keygen
@@ -129,11 +127,15 @@ module.exports = function (inputArgs) {
   if (cmd == 'prepare') {
     checkManifest();
     manifest = getManifest();
-    let compiledDir = path.join(
-      path.dirname(fs.realpathSync(localLinkManifest)),
-      'unpackage/resources/',
-      manifest.appid
-    );
+    let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
+    let compiledDir;
+
+    let prepareDir = manifest.uapp ? manifest.uapp['prepare.dir'] : '';
+    if (prepareDir) {
+      compiledDir = prepareDir.replace(/\$\{SRC\}/g, srcDir);
+    } else {
+      compiledDir = path.join(srcDir, 'unpackage/resources/', manifest.appid);
+    }
 
     let embedAppsDir = path.join(
       appDir,
@@ -141,10 +143,24 @@ module.exports = function (inputArgs) {
       manifest.appid
     );
 
+    // run command before prepare
+    let prepareBefore = manifest.uapp ? manifest.uapp['prepare.before'] : '';
+    if (prepareBefore) {
+      prepareBefore = prepareBefore.replace(/\$\{SRC\}/g, srcDir);
+      require('child_process').execSync(prepareBefore, { stdio: 'inherit' });
+    }
+
     fs.existsSync(embedAppsDir) && fs.rmdirSync(embedAppsDir, { recursive: true });
     fs.mkdirSync(embedAppsDir, { recursive: true });
     sync(compiledDir, embedAppsDir);
     console.log(chalk.green('打包APP资源已就绪'));
+
+    // run command after prepare
+    let prepareAfter = manifest.uapp ? manifest.uapp['prepare.after'] : '';
+    if (prepareAfter) {
+      prepareAfter = prepareAfter.replace(/\$\{SRC\}/g, srcDir);
+      require('child_process').execSync(prepareAfter, { stdio: 'inherit' });
+    }
     return;
   }
 
@@ -201,14 +217,9 @@ module.exports = function (inputArgs) {
     }
     console.log();
 
-    if (projectType == 'android') {
-      processAndroid();
-      return;
-    }
-
-    if (projectType == 'ios') {
-      processIOS();
-      return;
+    if (args.argv.remain[1] === 'sync') {
+      projectType === 'android' && processAndroid();
+      projectType === 'ios' && processIOS();
     }
 
     return;
