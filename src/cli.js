@@ -12,15 +12,16 @@ const path = require('path');
 const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
+const stripJsonComments = require('./stripJsonComments');
 
 const knownOpts = {
   version: Boolean,
-  help: Boolean,
+  help: Boolean
 };
 
 const shortHands = {
   v: '--version',
-  h: '--help',
+  h: '--help'
 };
 
 const appDir = process.cwd();
@@ -320,15 +321,10 @@ function cleanEmptyFoldersRecursively(folder) {
     files = fs.readdirSync(folder);
   }
 
-  if (files.length == 0) {
+  if (files.length === 0) {
     fs.rmdirSync(folder);
     return;
   }
-}
-
-function stripJSONComments(data) {
-  data = data.replace(new RegExp('\\s+//(.*)', 'g'), '');
-  return data.replace(/\/\*(.*?)\*\//gu, '');
 }
 
 function checkManifest() {
@@ -341,7 +337,7 @@ function checkManifest() {
 function getManifest() {
   if (fs.existsSync(localLinkManifest)) {
     let content = fs.readFileSync(localLinkManifest, 'utf8');
-    manifest = JSON.parse(stripJSONComments(content));
+    manifest = JSON.parse(stripJsonComments(content));
   }
   return manifest;
 }
@@ -395,7 +391,7 @@ public class WXEntryActivity extends AbsWXCallbackActivity {
 import io.dcloud.feature.payment.weixin.AbsWXPayCallbackActivity;
 public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
 }
-`,
+`
   };
 
   for (const entryFile of [wxEntryActivityFile, wXPayEntryActivityFile]) {
@@ -415,9 +411,9 @@ public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
   replaceControlXml(path.join(appDir, 'app/src/main/assets/data/dcloud_control.xml'));
 
   let sdkLinkDir = path.join(appDir, 'app/libs');
-  if (fs.existsSync(sdkLinkDir)) {
+  try {
     fs.unlinkSync(sdkLinkDir);
-  }
+  } catch (e) {}
   fs.symlinkSync(path.join(sdkHomeDir, 'android/libs'), sdkLinkDir, 'dir');
 
   console.log('processAndroid successfully');
@@ -521,7 +517,7 @@ function printJWTToken() {
       iat: timestamp,
       exp: timestamp + 86400 * 180,
       aud: 'https://appleid.apple.com',
-      sub: config.client_id,
+      sub: config.client_id
     };
 
     const jwt = require('jsonwebtoken');

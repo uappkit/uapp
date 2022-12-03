@@ -1,18 +1,18 @@
 'use strict';
 
-var _ = require('lodash');
-var fs = require('fs-extra');
-var path = require('path');
+const _ = require('lodash');
+const fs = require('fs-extra');
+const path = require('path');
 const chalk = require('chalk');
-var chokidar = require('chokidar');
+const chokidar = require('chokidar');
 
-var notifyPriority = {
+const notifyPriority = {
   error: 'high',
   copy: 'normal',
   remove: 'normal',
   watch: 'normal',
   'max-depth': 'low',
-  'no-delete': 'low',
+  'no-delete': 'low'
 };
 
 module.exports = function (source, target) {
