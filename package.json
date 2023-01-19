@@ -1,6 +1,6 @@
 {
   "name": "uapp",
-  "version": "2.1.9",
+  "version": "2.1.10",
   "description": "uapp是解决uniapp开发痛点并提升其开发效率的命令行工具. 类似于cordova, ionic, expo的作用",
   "main": "bin/uapp",
   "bin": {
@@ -23,7 +23,7 @@
     "chalk": "^0.5.1",
     "chokidar": "^3.5.3",
     "fs-extra": "^10.0.1",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": ">=9.0.0",
     "lodash": ">=4.17.21",
     "nopt": "^5.0.0",
     "update-notifier": "^5.1.0"

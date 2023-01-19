@@ -99,33 +99,35 @@ module.exports = function (inputArgs) {
 
   // command: uapp info, uapp info jwt, uapp info key
   if (cmd === 'info' && (!args.argv.remain[1] || args.argv.remain[1] === 'jwt' || args.argv.remain[1] === 'key')) {
-    if (projectType !== 'unknown' && fs.existsSync(localLinkManifest)) {
+    if (!args.argv.remain[1] && projectType !== 'unknown' && fs.existsSync(localLinkManifest)) {
       require('child_process').execSync('uapp manifest info', { stdio: 'inherit' });
     }
 
-    if (projectType === 'ios' || args.argv.remain[1] === 'jwt') {
+    if ((projectType === 'ios' && !args.argv.remain[1]) || args.argv.remain[1] === 'jwt') {
       printJWTToken();
       return;
     }
 
-    let keyFile = path.join(appDir, 'app/app.keystore');
-    if (!fs.existsSync(keyFile)) {
-      console.log('找不到 keystore 签名文件: ' + keyFile);
+    if (projectType === 'android') {
+      let keyFile = path.join(appDir, 'app/app.keystore');
+      if (!fs.existsSync(keyFile)) {
+        console.log('找不到 keystore 签名文件: ' + keyFile);
+        return;
+      }
+
+      let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
+      if (!fs.existsSync(path.resolve(gradle))) {
+        console.log('找不到 gradle 命令: ' + gradle);
+        return;
+      }
+
+      printAndroidKeyInfo(gradle);
       return;
     }
-
-    let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
-    if (!fs.existsSync(path.resolve(gradle))) {
-      console.log('找不到 gradle 命令: ' + gradle);
-      return;
-    }
-
-    printAndroidKeyInfo(gradle);
-    return;
   }
 
   // command: uapp prepare
-  if (cmd == 'prepare') {
+  if (cmd === 'prepare') {
     checkManifest();
     manifest = getManifest();
     let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
@@ -521,7 +523,7 @@ function printJWTToken() {
     };
 
     const jwt = require('jsonwebtoken');
-    let token = jwt.sign(claims, privateKey, { algorithm: 'ES256' }, { header: headers });
+    let token = jwt.sign(claims, privateKey, { algorithm: 'ES256', header: headers });
     console.log(token);
   } catch (error) {
     console.log(error.message + '\n');
