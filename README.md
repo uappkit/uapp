@@ -1,7 +1,6 @@
 ## 了解 uapp
 
-uapp是解决uniapp开发痛点并提升其开发效率的命令行工具。类似于cordova, ionic, expo的作用。uapp还包含 uapp-android, uapp-ios
-两个平台的模板代码。
+uapp 是一个方便 uniapp 离线打包的脚手架工具，类似 cordova, expo, Taro 等项目cli的作用。uapp还包含 uapp-android, uapp-ios 两个平台的模板代码。
 
 开发过程中，很多繁琐的操作用`uapp`都是一步搞定:
 

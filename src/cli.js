@@ -444,10 +444,15 @@ function processIOS() {
   replaceControlXml(path.join(appDir, 'Main/Resources/AppRelease/control.xml'));
 
   let sdkLinkDir = path.join(appDir, '/SDKs/SDK');
-  if (fs.existsSync(sdkLinkDir)) {
-    fs.unlinkSync(sdkLinkDir);
+  if (!fs.existsSync(sdkLinkDir)) {
+    let iosSDKDir = path.join(sdkHomeDir, '/ios/SDK');
+    if (!fs.existsSync(iosSDKDir)) {
+      console.log('找不到iOS SDK，请参照 README 配置');
+      console.log('SDK 位置: ' + iosSDKDir);
+    } else {
+      fs.symlinkSync(path.join(sdkHomeDir, '/ios/SDK'), sdkLinkDir, 'dir');
+    }
   }
-  fs.symlinkSync(path.join(sdkHomeDir, '/ios/SDK'), sdkLinkDir, 'dir');
 
   // require('child_process').execSync('xcodegen', { stdio: 'inherit' });
   console.log('processIOS successfully');
