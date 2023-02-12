@@ -95,11 +95,11 @@ uapp sdk init
 
 ### 1. 下载 Android 离线工程源码
 
-见 [doc/uapp-android.md](doc/uapp-android.md)
+`git clone https://github.com/uappkit/uapp-android.git`
 
 ### 2. 下载 iOS 离线工程源码
 
-见 [doc/uapp-ios.md](doc/uapp-ios.md)
+`git clone https://github.com/uappkit/uapp-ios.git`
 
 iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适合 DCloud离线SDK 的发布形式。经过我们在产品中的不断实践，最终选择了
 XCodeGen。
