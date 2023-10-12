@@ -23,7 +23,13 @@ uapp 通用命令🔥
     uapp prepare
 
   - 发布离线打包基座到 HBuilderX 下
-    uapp publish debug
+    uapp run build:dev --sync (uapp publish debug 将弃用)
+
+  - 编译开发包，不发布
+    uapp run build:dev
+
+  - 编译 release 包
+    uapp run build
 
 其他命令:
 

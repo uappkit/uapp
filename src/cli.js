@@ -13,11 +13,12 @@ const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
 const stripJsonComments = require('./stripJsonComments');
-const { removeSync } = require('fs-extra')
+const { removeSync } = require('fs-extra');
 
 const knownOpts = {
   version: Boolean,
-  help: Boolean
+  help: Boolean,
+  sync: Boolean
 };
 
 const shortHands = {
@@ -169,6 +170,71 @@ module.exports = function (inputArgs) {
   }
 
   // commands:
+  // uapp run build
+  // uapp run build:dev --sync
+  if (cmd === 'run' && (args.argv.remain[1] === 'build' || args.argv.remain[1] === 'build:dev')) {
+    checkManifest();
+
+    let buildType = args.argv.remain[1];
+    if (projectType === 'android') {
+      let assembleTypeMap = {
+        'build': 'assembleRelease',
+        'build:dev': 'assembleDebug'
+      };
+
+      let outFileMap = {
+        'build': 'release/app-release.apk',
+        'build:dev': 'debug/app-debug.apk'
+      };
+
+      let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
+      require('child_process').execSync(gradle + ` ${assembleTypeMap[buildType]}`, { stdio: 'inherit' });
+      let buildOutFile = path.join(appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
+
+      if (buildType === 'build:dev' && args.sync) {
+        sync(
+          buildOutFile,
+          path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/android_debug.apk')
+        );
+      }
+
+      console.log('\n编译成功，安装包位置: ');
+      console.log(buildOutFile);
+      return;
+    }
+
+    if (projectType === 'ios') {
+      if (buildType !== 'build:dev' || !args.sync) {
+        console.log('iOS仅支持基座发布命令uapp run build:dev --sync，其他情况请直接使用 xcode');
+        return;
+      }
+
+      // gererate uapp_debug.xcarchive
+      require('child_process').execSync(
+        'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive',
+        { stdio: 'inherit' }
+      );
+
+      // generate ipa
+      require('child_process').execSync(
+        'xcodebuild -exportArchive -archivePath out/uapp_debug.xcarchive -exportPath out -exportOptionsPlist config/export.plist',
+        { stdio: 'inherit' }
+      );
+
+      if (args.sync) {
+        sync(
+          path.join(appDir, 'out/HBuilder.ipa'),
+          path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/ios_debug.ipa')
+        );
+      }
+      return;
+    }
+
+    console.log('无法识别的工程模板，请参考帮助');
+    return;
+  }
+
+  // commands:
   // uapp manifest sync ${webapp}/src/manifest.json
   // uapp manifest info
   if (cmd === 'manifest' && (args.argv.remain[1] === 'sync' || args.argv.remain[1] === 'info')) {
@@ -231,40 +297,7 @@ module.exports = function (inputArgs) {
 
   // command: uapp publish debug
   if (cmd === 'publish' && args.argv.remain[1] === 'debug') {
-    checkManifest();
-
-    if (projectType === 'ios') {
-      // gererate uapp_debug.xcarchive
-      require('child_process').execSync(
-        'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive',
-        { stdio: 'inherit' }
-      );
-
-      // generate ipa
-      require('child_process').execSync(
-        'xcodebuild -exportArchive -archivePath out/uapp_debug.xcarchive -exportPath out -exportOptionsPlist config/export.plist',
-        { stdio: 'inherit' }
-      );
-
-      sync(
-        path.join(appDir, 'out/HBuilder.ipa'),
-        path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/ios_debug.ipa')
-      );
-      return;
-    }
-
-    if (projectType === 'android') {
-      let gradle = process.platform === 'win32' ? './gradlew.bat' : './gradlew';
-      require('child_process').execSync(gradle + ' assembleDebug', { stdio: 'inherit' });
-
-      sync(
-        path.join(appDir, 'app/build/outputs/apk/debug/app-debug.apk'),
-        path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/android_debug.apk')
-      );
-      return;
-    }
-
-    console.log('无法识别的工程模板，请参考帮助');
+    console.log('此命令已弃用，请使用 uapp run build:dev --sync');
     return;
   }
 
