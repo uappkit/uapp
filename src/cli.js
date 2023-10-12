@@ -18,7 +18,10 @@ const { removeSync } = require('fs-extra');
 const knownOpts = {
   version: Boolean,
   help: Boolean,
-  sync: Boolean
+  sync: Boolean,
+  typescript: Boolean,
+  alpha: Boolean,
+  vue2: Boolean
 };
 
 const shortHands = {
@@ -52,7 +55,22 @@ module.exports = function (inputArgs) {
     let projectName = args.argv.remain[1];
     if (projectName) {
       try {
-        require('child_process').execSync('vue create -p dcloudio/uni-preset-vue ' + projectName, { stdio: 'inherit' });
+        let baseCommand;
+        if (args.vue2) {
+          // vue2 必须使用小写
+          projectName = projectName.toLowerCase();
+          baseCommand = args.alpha
+            ? 'vue create -p dcloudio/uni-preset-vue#alpha '
+            : 'vue create -p dcloudio/uni-preset-vue ';
+        } else {
+          baseCommand = args.alpha
+            ? 'npx degit dcloudio/uni-preset-vue#vite-alpha '
+            : 'npx degit dcloudio/uni-preset-vue#vite ';
+          if (args.typescript) {
+            baseCommand = 'npx degit dcloudio/uni-preset-vue#vite-ts ';
+          }
+        }
+        require('child_process').execSync(baseCommand + projectName, { stdio: 'inherit' });
       } catch (error) {
         console.log('请先安装 vue 环境:');
         console.log('npm i -g @vue/cli');
@@ -205,7 +223,8 @@ module.exports = function (inputArgs) {
 
     if (projectType === 'ios') {
       if (buildType !== 'build:dev' || !args.sync) {
-        console.log('iOS仅支持基座发布命令uapp run build:dev --sync，其他情况请直接使用 xcode');
+        console.log('因为iOS发布，需要走苹果的发布流程，所以不支持iOS，iOS发布直接用 xcode')
+        console.log('iOS仅支持基座发布命令 `uapp run build:dev --sync`，其他情况请直接使用 xcode');
         return;
       }
 

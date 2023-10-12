@@ -116,7 +116,7 @@ uapp manifest sync ${webapp}/src/manifest.json
 uapp prepare
 
 # 编译并发布自定义基座到 HBuilderX 下
-uapp publish debug
+uapp run build:dev --sync
 ```
 
 ## manifest.json 相关配置
@@ -139,7 +139,7 @@ uapp publish debug
     "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",
     "prepare.dir": "${SRC}/../dist/build/app",
     "prepare.before": "cd ${SRC}/../ && npm run build:app",
-    "prepare.after": "uapp publish debug"
+    "prepare.after": "uapp run build:dev --sync"
   },
   "app-plus": {
     "distribute": {

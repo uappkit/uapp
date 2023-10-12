@@ -10,8 +10,14 @@ uapp 通用命令🔥
   - 显示APP开发中会用到的配置信息
     uapp info [jwt|key] (不指定 jwt|key 会自动判断)
 
-  - 新建一个基于 uniapp-cli 的工程
+  - 新建一个基于 uniapp-cli 的工程，默认使用 vite vue3
     uapp new ${projectName}
+
+    // 用 alpha 模版
+    uapp new ${projectName} --alpha
+
+    // 使用旧的 vue2 模版
+    uapp new ${projectName} --vue2
 
 需在工程模板下运行命令☘️
 
@@ -29,6 +35,7 @@ uapp 通用命令🔥
     uapp run build:dev
 
   - 编译 release 包
+    // 注意: 因为iOS发布，需要走苹果的发布流程，所以不支持iOS，iOS发布直接用 xcode
     uapp run build
 
 其他命令:
