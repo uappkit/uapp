@@ -21,7 +21,7 @@ iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适
 ├── manifest.json  # 指向 HBuilderX 工程里 manifest.json 的软连接
 ├── modules        # 存放第三方插件工程
 │   └── README.md
-├── out            # gitignore, `uapp publish debug` 生成打包基座，并同步给 HBuilderX
+├── out            # gitignore, `uapp run build:dev --sync` 生成打包基座，并同步给 HBuilderX
 │   └── uapp_debug.xcarchive
 ├── project.yml
 └── uapp.xcodeproj
