@@ -67,7 +67,6 @@ uapp sdk init
 .
 ├── android
 │   ├── SDK # -> 这里是Android的SDK
-│   └── libs
 ├── ios
 │   ├── SDK # -> 这里是iOS的SDK
 └── templates
@@ -84,7 +83,7 @@ uapp sdk init
 
 **android 模块依赖说明:**
 
-针对 android，仅需提取必用的依赖包放入 $HOME/.uappsdk/android/libs 里。
+针对 android，将依赖的包名放入工程目录 `app/libs.txt` 文件内，每个包名一行。
 <https://nativesupport.dcloud.net.cn/AppDocs/usemodule/androidModuleConfig/android_Library>
 
 **ios 模块依赖说明:**
