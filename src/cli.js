@@ -616,7 +616,7 @@ function printAndroidKeyInfo(gradle) {
 
   // for uniapp project
   if (manifest) {
-    console.log('https://dev.dcloud.net.cn/app/build-config?appid=' + manifest.appid);
+    console.log('https://dev.dcloud.net.cn/pages/app/detail/info?tab=package&appid=' + manifest.appid);
   }
 
   console.log();
