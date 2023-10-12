@@ -13,6 +13,7 @@ const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
 const stripJsonComments = require('./stripJsonComments');
+const { removeSync } = require('fs-extra')
 
 const knownOpts = {
   version: Boolean,
@@ -153,7 +154,7 @@ module.exports = function (inputArgs) {
       require('child_process').execSync(prepareBefore, { stdio: 'inherit' });
     }
 
-    fs.existsSync(embedAppsDir) && fs.rmdirSync(embedAppsDir, { recursive: true });
+    fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
     fs.mkdirSync(embedAppsDir, { recursive: true });
     sync(compiledDir, embedAppsDir);
     console.log(chalk.green('打包APP资源已就绪'));
@@ -324,7 +325,7 @@ function cleanEmptyFoldersRecursively(folder) {
   }
 
   if (files.length === 0) {
-    fs.rmdirSync(folder);
+    removeSync(folder);
     return;
   }
 }
