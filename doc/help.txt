@@ -4,7 +4,7 @@ uapp 通用命令🔥
   - 初始化或更新 uappsdk
     uapp sdk init
 
-  - 生成的签名文件 app.keystore
+  - 生成 android 的签名文件 app.keystore
     uapp keygen
 
   - 显示APP开发中会用到的配置信息
@@ -13,8 +13,8 @@ uapp 通用命令🔥
   - 新建一个基于 uniapp-cli 的工程，默认使用 vite vue3
     uapp new ${projectName}
 
-    // 用 alpha 模版
-    uapp new ${projectName} --alpha
+    // 用 alpha 模版，并使用 typescript
+    uapp new ${projectName} --alpha --typescript
 
     // 使用旧的 vue2 模版
     uapp new ${projectName} --vue2

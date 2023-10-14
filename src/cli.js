@@ -223,7 +223,7 @@ module.exports = function (inputArgs) {
 
     if (projectType === 'ios') {
       if (buildType !== 'build:dev' || !args.sync) {
-        console.log('因为iOS发布，需要走苹果的发布流程，所以不支持iOS，iOS发布直接用 xcode')
+        console.log('因为iOS发布，需要走苹果的发布流程，所以不支持iOS，iOS发布直接用 xcode');
         console.log('iOS仅支持基座发布命令 `uapp run build:dev --sync`，其他情况请直接使用 xcode');
         return;
       }
@@ -344,9 +344,9 @@ function checkForUpdates() {
 
 function getFiles(dir, files_) {
   files_ = files_ || [];
-  var files = fs.readdirSync(dir);
-  for (var i in files) {
-    var name = path.join(dir, files[i]);
+  const files = fs.readdirSync(dir);
+  for (let i in files) {
+    const name = path.join(dir, files[i]);
     if (fs.statSync(name).isDirectory()) {
       getFiles(name, files_);
     } else {
@@ -357,17 +357,17 @@ function getFiles(dir, files_) {
 }
 
 function cleanEmptyFoldersRecursively(folder) {
-  var fs = require('fs');
-  var path = require('path');
+  const fs = require('fs');
+  const path = require('path');
 
-  var isDir = fs.statSync(folder).isDirectory();
-  if (!isDir) {
+  if (!fs.statSync(folder).isDirectory()) {
     return;
   }
-  var files = fs.readdirSync(folder);
+
+  let files = fs.readdirSync(folder);
   if (files.length > 0) {
     files.forEach(function (file) {
-      var fullPath = path.join(folder, file);
+      const fullPath = path.join(folder, file);
       cleanEmptyFoldersRecursively(fullPath);
     });
 
@@ -378,7 +378,6 @@ function cleanEmptyFoldersRecursively(folder) {
 
   if (files.length === 0) {
     removeSync(folder);
-    return;
   }
 }
 
@@ -513,7 +512,7 @@ function processIOS() {
 
 function replaceStoryboard(storyboardFile) {
   let content = fs.readFileSync(storyboardFile, 'utf-8');
-  var re = /(text=")(.+?)(".+)(?=uapp-launchscreen-appname)/;
+  const re = /(text=")(.+?)(".+)(?=uapp-launchscreen-appname)/;
   content = content.replace(re, '$1' + manifest.uapp.name + '$3');
   fs.writeFileSync(storyboardFile, content);
 }
@@ -601,9 +600,7 @@ function printJWTToken() {
 function printAndroidKeyInfo(gradle) {
   manifest = getManifest();
 
-  let output = require('child_process')
-    .execSync(gradle + ' app:signingReport')
-    .toString();
+  let output = require('child_process').execSync(gradle + ' app:signingReport').toString();
   let r = output.match(/Variant: release[\s\S]+?----------/);
 
   let md5 = r[0].match(/MD5: (.+)/)[1].replace(/:/g, '');
