@@ -4,6 +4,10 @@ uapp 通用命令🔥
   - 初始化或更新 uappsdk
     uapp sdk init
 
+  - 新建离线工程
+    uapp add android  // 当前目录下创建 android 工程
+    uapp add ios      // 当前目录下创建 ios 工程
+
   - 生成 android 的签名文件 app.keystore
     uapp keygen
 
@@ -52,5 +56,4 @@ uapp 通用命令🔥
 
 工程模板代码位置:
 
-    👉 https://github.com/uappkit/uapp-android
-    👉 https://github.com/uappkit/uapp-ios
+    👉 https://gitee.com/uappkit/platform

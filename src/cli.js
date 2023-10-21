@@ -9,6 +9,7 @@ const nopt = require('nopt');
 const updateNotifier = require('update-notifier');
 const fs = require('fs');
 const path = require('path');
+const tiged = require('tiged');
 const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
@@ -185,6 +186,24 @@ module.exports = function (inputArgs) {
       require('child_process').execSync(prepareAfter, { stdio: 'inherit' });
     }
     return;
+  }
+
+  // commands:
+  // uapp add ${platform}
+  // support platforms: android, ios
+  if (cmd === 'add') {
+    let platform = args.argv.remain[1];
+    let supportPlatform = ['android', 'ios'];
+    if (!supportPlatform.includes(platform)) {
+      console.log(`不支持平台 ${platform}, 当前支持的平台有: ${supportPlatform.join(', ')}`);
+      return;
+    }
+
+    return tiged(`git@gitee.com:uappkit/platform.git/${platform}#main`, { cache: true, force: false, verbose: true })
+      .on('info', info => {
+        console.log(info.message);
+      })
+      .clone(platform);
   }
 
   // commands:

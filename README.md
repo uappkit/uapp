@@ -90,15 +90,17 @@ uapp sdk init
 
 <https://nativesupport.dcloud.net.cn/AppDocs/usemodule/iOSModuleConfig/common>
 
-## 下载离线打包工程源码
+## 新建离线打包工程
 
-### 1. 下载 Android 离线工程源码
+### 1. 新建 android 工程
 
-`git clone https://github.com/uappkit/uapp-android.git`
+`uapp add android`
 
-### 2. 下载 iOS 离线工程源码
+### 2. 新建 ios 工程
 
-`git clone https://github.com/uappkit/uapp-ios.git`
+`uapp add ios`
+
+> 如果当前目录已有 android 或 ios 目录，会提示错误，可将其改名后，再执行命令
 
 iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适合 DCloud离线SDK 的发布形式。经过我们在产品中的不断实践，最终选择了
 XCodeGen。
