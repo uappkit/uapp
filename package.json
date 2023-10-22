@@ -1,7 +1,7 @@
 {
   "name": "uapp",
-  "version": "2.2.3",
-  "description": "uapp 是一个方便 uniapp 离线打包的脚手架工具，类似 cordova, expo, Taro 等项目cli的作用。uapp还包含 uapp-android, uapp-ios 两个平台的模板代码",
+  "version": "2.2.4",
+  "description": "uapp 是一款跨平台APP开发工具箱。uapp 通过集成 uniapp，electron，tauri，让开发者仅需写一套代码，就能横扫所有平台",
   "main": "bin/uapp",
   "bin": {
     "uapp": "bin/uapp"

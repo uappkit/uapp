@@ -55,26 +55,28 @@ module.exports = function (inputArgs) {
   if (cmd === 'new') {
     let projectName = args.argv.remain[1];
     if (projectName) {
-      try {
-        let baseCommand;
-        if (args.vue2) {
-          // vue2 必须使用小写
-          projectName = projectName.toLowerCase();
-          baseCommand = args.alpha
-            ? 'vue create -p dcloudio/uni-preset-vue#alpha '
-            : 'vue create -p dcloudio/uni-preset-vue ';
-        } else {
-          baseCommand = args.alpha
-            ? 'npx degit dcloudio/uni-preset-vue#vite-alpha '
-            : 'npx degit dcloudio/uni-preset-vue#vite ';
-          if (args.typescript) {
-            baseCommand = 'npx degit dcloudio/uni-preset-vue#vite-ts ';
-          }
+      if (args.vue2) {
+        // vue2 必须使用小写
+        let baseCommand = args.alpha
+          ? 'vue create -p dcloudio/uni-preset-vue#alpha '
+          : 'vue create -p dcloudio/uni-preset-vue ';
+        try {
+          require('child_process').execSync(baseCommand + projectName.toLowerCase(), { stdio: 'inherit' });
+        } catch (error) {
+          console.log('请先安装 vue 环境:');
+          console.log('npm i -g @vue/cli');
         }
-        require('child_process').execSync(baseCommand + projectName, { stdio: 'inherit' });
-      } catch (error) {
-        console.log('请先安装 vue 环境:');
-        console.log('npm i -g @vue/cli');
+      } else {
+        let branch = args.alpha ? '#vite-alpha' : '#vite';
+        if (args.typescript) {
+          branch = '#vite-ts';
+        }
+
+        tiged(`git@gitee.com:dcloud/uni-preset-vue.git${branch}`, { cache: true, force: false, verbose: true })
+          .on('info', info => {
+            console.log(info.message);
+          })
+          .clone(projectName);
       }
       return;
     }
