@@ -1,5 +1,10 @@
 ## 了解 uapp 跨平台开发工具箱
 
+```js
+// what's uapp
+const uapp = 'universal app'
+```
+
 uapp 是一款跨平台APP开发工具箱，所有积累都来自多年产品开发中的不断实践。开发者仅需写一套代码，就能横扫所有平台。
 
 uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序(微信/抖音/百度/QQ/飞书/钉钉/快应用等等)，也能支持所有的浏览器插件开发。
