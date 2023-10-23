@@ -188,7 +188,7 @@ uapp run custom
 >
 > 例如 android.name, android.package, ios.package, ios.versionCode ...
 >
-> prepare.* 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json 的同级目录，支持加 ../定位上一级目录，避免用绝对路径。
+> custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json 的同级目录，支持加 ../定位上一级目录，避免用绝对路径。
 
 👇👇 👇
 
