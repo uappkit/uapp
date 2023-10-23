@@ -15,7 +15,7 @@ const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
 const stripJsonComments = require('./stripJsonComments');
-const { removeSync } = require('fs-extra');
+const { removeSync, pathExistsSync } = require('fs-extra');
 
 const knownOpts = {
   version: Boolean,
@@ -158,11 +158,23 @@ module.exports = function (inputArgs) {
 
   // command: uapp prepare
   if (cmd === 'prepare') {
+    let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
+    let resDir = path.join(srcDir, 'unpackage/res/icons');
+    // 如果没生成过图标目录, 跳过
+    if (pathExistsSync(resDir)) {
+      if (projectType === 'android') {
+        iconsSyncToAndroid(resDir);
+      } else if (projectType === 'ios') {
+        iconsSyncToIOS(resDir);
+      }
+    } else {
+      console.log('未发现图标资源，跳过App图标更新');
+      console.log('请先使用 HBuilderX => manifest.json 配置里的 App图标配置，自动生成所有图标。再运行 uapp prepare 替换');
+    }
+
     checkManifest();
     manifest = getManifest();
-    let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
     let compiledDir = path.join(srcDir, 'unpackage/resources/', manifest.appid);
-
     let embedAppsDir = path.join(
       appDir,
       projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
@@ -475,6 +487,13 @@ public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
   console.log('processAndroid successfully');
 }
 
+function iconsSyncToAndroid(resDir) {
+  sync(
+    path.join(resDir, '144x144.png'),
+    path.join(appDir, 'app/src/main/res/drawable-xxhdpi/icon.png')
+  );
+}
+
 /*
  * ios platform
  */
@@ -552,6 +571,15 @@ function replaceControlXml(xmlFile) {
   let re = /(app appid=")(.+?)(")/g;
   content = content.replace(re, '$1' + manifest.appid + '$3');
   fs.writeFileSync(xmlFile, content);
+}
+
+function iconsSyncToIOS(resDir) {
+  let iconFiles = fs.readdirSync(resDir);
+  iconFiles.forEach(function (file) {
+    if (!file.endsWith('.png')) return;
+    const fullPath = path.join(resDir, file);
+    sync(fullPath, path.join(appDir, '/Main/Resources/Images.xcassets/AppIcon.appiconset/', file));
+  });
 }
 
 function printManifestInfo(projectType) {

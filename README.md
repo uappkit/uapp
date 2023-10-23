@@ -44,7 +44,7 @@ uapp做了很多标准化工作，分离了调试和发布的配置，也方便�
 * APP发布和开发调试时的配置不完全相同，比如你不能把 debug-server-release.aar
   这种调试相关的库发布，那就需要把发布和开发的配置隔离开，uapp已经帮你做好隔离配置，并且很方便通过jenkins实现发布流程的自动化集成，即使不需要也好过手动改来改去，把自己都改晕了。
 * 自己编译个调试基座，还需要手动 COPY 到 HBuilderX 下？用 `uapp run build:dev` 自动编译一步搞定。
-* HBuilderX 编译好的本地APP资源，还需要手动 COPY 到工程里? 用 `uapp prepare` 一步搞定。
+* HBuilderX 本地打包资源，App使用的图标等，还需要手动 COPY 到工程里? 用 `uapp prepare` 一步搞定。
 * 微信开发者平台，[DCloud 开发者中心](http://dev.dcloud.net.cn) 都需要的签名信息怎么查看，`uapp info` 一步搞定。
 * uniapp-cli 创建新工程的命令是啥了的，没记住，`uapp new` 一步搞定。
 
