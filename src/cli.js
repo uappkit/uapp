@@ -191,7 +191,7 @@ module.exports = function (inputArgs) {
   // command: uapp run custom
   if (cmd === 'run' && args.argv.remain[1] === 'custom') {
     manifest = getManifest();
-    let command = manifest.uapp ? manifest.uapp['custom.command'] : '';
+    let command = manifest.uapp[`${projectType}.custom.command`] || manifest.uapp['custom.command'];
     if (!command) {
       console.log('自定义命令为空，请参照文档中的 custom.command 配置');
     } else {
