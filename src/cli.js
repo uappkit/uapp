@@ -577,9 +577,15 @@ function iconsSyncToIOS(resDir) {
   let iconFiles = fs.readdirSync(resDir);
   iconFiles.forEach(function (file) {
     if (!file.endsWith('.png')) return;
+    // skip android icons
+    if (['72x72.png', '96x96.png', '144x144.png', '192x192.png'].includes(file)) return;
+
     const fullPath = path.join(resDir, file);
     sync(fullPath, path.join(appDir, '/Main/Resources/Images.xcassets/AppIcon.appiconset/', file));
   });
+
+  sync(path.join(resDir, '120x120.png'), path.join(appDir, 'Main/Resources/logo@2x.png'));
+  sync(path.join(resDir, '180x180.png'), path.join(appDir, 'Main/Resources/logo@3x.png'));
 }
 
 function printManifestInfo(projectType) {
