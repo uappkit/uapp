@@ -60,7 +60,7 @@ module.exports = function (source, target) {
 function syncFiles(source, target, opts, notify) {
   opts = _.defaults(opts || {}, {
     watch: false,
-    delete: false,
+    delete: true,
     depth: Infinity,
   });
 
@@ -153,7 +153,7 @@ function mirror(source, target, opts, notify, depth) {
     return copied && deletedExtra;
   } else if (sourceStat.isFile() && targetStat.isFile()) {
     // compare update-time before overwriting
-    if (sourceStat.mtime > targetStat.mtime) {
+    if (sourceStat.mtime > targetStat.mtime || sourceStat.size !== targetStat.size) {
       return copy(source, target, notify);
     } else {
       return true;
