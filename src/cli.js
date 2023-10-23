@@ -605,6 +605,11 @@ function printManifestInfo(projectType) {
   if (manifest.uapp.appkey) {
     console.log('- appKey      : ' + manifest.uapp.appkey);
   }
+
+  // for uniapp project
+  console.log();
+  console.log(`👇 DCloud 开发者后台配置 dcloud_appkey (uapp.${projectType}.appkey): `);
+  console.log('https://dev.dcloud.net.cn/pages/app/detail/info?tab=package&appid=' + manifest.appid);
   console.log();
 }
 
@@ -657,8 +662,16 @@ function printAndroidKeyInfo(gradle) {
   manifest = getManifest();
 
   let output = require('child_process').execSync(gradle + ' app:signingReport').toString();
-  let r = output.match(/Variant: release[\s\S]+?----------/);
+  let r;
+  if (output.indexOf('Invalid keystore format') > 0) {
+    r = output.match(/Error: ([\s\S]+?)\n----------/);
+    console.log('签名文件错误: ' + r[1]);
+    console.log('问题可能因为创建 app.keystore 时使用的java版本和当前不一致，可更换java版本后再尝试');
+    console.log('\n------ 当前java版本 ------');
+    return require('child_process').execSync('java -version', { stdio: 'inherit' });
+  }
 
+  r = output.match(/Variant: release[\s\S]+?----------/);
   let md5 = r[0].match(/MD5: (.+)/)[1].replace(/:/g, '');
   let sha1 = r[0].match(/SHA1: (.+)/)[1];
   console.log('👇 应用签名 (MD5), 用于微信开放平台:');
@@ -666,11 +679,6 @@ function printAndroidKeyInfo(gradle) {
   console.log();
   console.log('👇 Android 证书签名 (SHA1), 用于离线打包 Key:');
   console.log(sha1);
-
-  // for uniapp project
-  if (manifest) {
-    console.log('https://dev.dcloud.net.cn/pages/app/detail/info?tab=package&appid=' + manifest.appid);
-  }
 
   console.log();
   console.log('----------');
