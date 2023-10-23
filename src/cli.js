@@ -1,7 +1,8 @@
 /**
  * Author: Yin Qisen <yinqisen@gmail.com>
  * Github: https://github.com/uappkit
- * Copyright(c) 2022
+ *
+ * Copyright(c) 2022 - 2023, uapp.dev
  */
 
 const _ = require('lodash');
@@ -19,10 +20,10 @@ const { removeSync } = require('fs-extra');
 const knownOpts = {
   version: Boolean,
   help: Boolean,
-  sync: Boolean,
   typescript: Boolean,
   alpha: Boolean,
-  vue2: Boolean
+  vue2: Boolean,
+  'no-copy': Boolean
 };
 
 const shortHands = {
@@ -31,8 +32,8 @@ const shortHands = {
 };
 
 const appDir = process.cwd();
-const localLinkManifest = path.join(appDir, 'manifest.json');
 const sdkHomeDir = path.join(require('os').homedir(), '.uappsdk');
+let localLinkManifest = path.join(appDir, 'manifest.json');
 let manifest = '';
 
 module.exports = function (inputArgs) {
@@ -49,6 +50,14 @@ module.exports = function (inputArgs) {
   if (!cmd || cmd === 'help' || args.help) {
     printHelp();
     return;
+  }
+
+  // 如果当面目录不存在 manifest.json，尝试使用 ../src/manifest.json
+  if (!fs.existsSync(localLinkManifest)) {
+    let tryManifestFile = path.resolve(path.join(appDir, '../src/manifest.json'));
+    if (fs.existsSync(tryManifestFile)) {
+      localLinkManifest = tryManifestFile;
+    }
   }
 
   // command: uapp new
@@ -122,9 +131,7 @@ module.exports = function (inputArgs) {
 
   // command: uapp info, uapp info jwt, uapp info key
   if (cmd === 'info' && (!args.argv.remain[1] || args.argv.remain[1] === 'jwt' || args.argv.remain[1] === 'key')) {
-    if (!args.argv.remain[1] && projectType !== 'unknown' && fs.existsSync(localLinkManifest)) {
-      require('child_process').execSync('uapp manifest info', { stdio: 'inherit' });
-    }
+    printManifestInfo(projectType);
 
     if ((projectType === 'ios' && !args.argv.remain[1]) || args.argv.remain[1] === 'jwt') {
       printJWTToken();
@@ -154,14 +161,7 @@ module.exports = function (inputArgs) {
     checkManifest();
     manifest = getManifest();
     let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
-    let compiledDir;
-
-    let prepareDir = manifest.uapp ? manifest.uapp['prepare.dir'] : '';
-    if (prepareDir) {
-      compiledDir = prepareDir.replace(/\$\{SRC\}/g, srcDir);
-    } else {
-      compiledDir = path.join(srcDir, 'unpackage/resources/', manifest.appid);
-    }
+    let compiledDir = path.join(srcDir, 'unpackage/resources/', manifest.appid);
 
     let embedAppsDir = path.join(
       appDir,
@@ -169,29 +169,28 @@ module.exports = function (inputArgs) {
       manifest.appid
     );
 
-    // run command before prepare
-    let prepareBefore = manifest.uapp ? manifest.uapp['prepare.before'] : '';
-    if (prepareBefore) {
-      prepareBefore = prepareBefore.replace(/\$\{SRC\}/g, srcDir);
-      require('child_process').execSync(prepareBefore, { stdio: 'inherit' });
-    }
-
     fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
     fs.mkdirSync(embedAppsDir, { recursive: true });
     sync(compiledDir, embedAppsDir);
     console.log(chalk.green('打包APP资源已就绪'));
+    return;
+  }
 
-    // run command after prepare
-    let prepareAfter = manifest.uapp ? manifest.uapp['prepare.after'] : '';
-    if (prepareAfter) {
-      prepareAfter = prepareAfter.replace(/\$\{SRC\}/g, srcDir);
-      require('child_process').execSync(prepareAfter, { stdio: 'inherit' });
+  // command: uapp run custom
+  if (cmd === 'run' && args.argv.remain[1] === 'custom') {
+    manifest = getManifest();
+    let command = manifest.uapp ? manifest.uapp['custom.command'] : '';
+    if (!command) {
+      console.log('自定义命令为空，请参照文档中的 custom.command 配置');
+    } else {
+      let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
+      command = command.replace(/\$\{SRC\}/g, srcDir);
+      require('child_process').execSync(command, { stdio: 'inherit' });
     }
     return;
   }
 
-  // commands:
-  // uapp add ${platform}
+  // command: uapp add ${platform}
   // support platforms: android, ios
   if (cmd === 'add') {
     let platform = args.argv.remain[1];
@@ -210,7 +209,7 @@ module.exports = function (inputArgs) {
 
   // commands:
   // uapp run build
-  // uapp run build:dev --sync
+  // uapp run build:dev { --no-copy | 不复制到 hbx 自定义基座 }
   if (cmd === 'run' && (args.argv.remain[1] === 'build' || args.argv.remain[1] === 'build:dev')) {
     checkManifest();
 
@@ -230,7 +229,7 @@ module.exports = function (inputArgs) {
       require('child_process').execSync(gradle + ` ${assembleTypeMap[buildType]}`, { stdio: 'inherit' });
       let buildOutFile = path.join(appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
 
-      if (buildType === 'build:dev' && args.sync) {
+      if (buildType === 'build:dev' && !args['no-copy']) {
         sync(
           buildOutFile,
           path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/android_debug.apk')
@@ -243,9 +242,8 @@ module.exports = function (inputArgs) {
     }
 
     if (projectType === 'ios') {
-      if (buildType !== 'build:dev' || !args.sync) {
-        console.log('因为iOS发布，需要走苹果的发布流程，所以不支持iOS，iOS发布直接用 xcode');
-        console.log('iOS仅支持基座发布命令 `uapp run build:dev --sync`，其他情况请直接使用 xcode');
+      if (buildType !== 'build:dev') {
+        console.log('iOS仅支持自定义基座打包`uapp run build:dev`，如正式版发布请直接使用 xcode');
         return;
       }
 
@@ -261,7 +259,7 @@ module.exports = function (inputArgs) {
         { stdio: 'inherit' }
       );
 
-      if (args.sync) {
+      if (!args['no-copy']) {
         sync(
           path.join(appDir, 'out/HBuilder.ipa'),
           path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/ios_debug.ipa')
@@ -275,61 +273,43 @@ module.exports = function (inputArgs) {
   }
 
   // commands:
-  // uapp manifest sync ${webapp}/src/manifest.json
-  // uapp manifest info
-  if (cmd === 'manifest' && (args.argv.remain[1] === 'sync' || args.argv.remain[1] === 'info')) {
-    let manifestFile = args.argv.remain[2] || 'manifest.json';
-
-    // check symlink
-    if (manifestFile === 'manifest.json') {
-      manifestFile = fs.realpathSync(localLinkManifest);
-    }
-
-    if (!fs.existsSync(manifestFile)) {
+  // uapp manifest path/to/manifest.json
+  if (cmd === 'manifest') {
+    let manifestFile = args.argv.remain[1];
+    if (manifestFile && !fs.existsSync(manifestFile)) {
       console.log('找不到: ' + manifestFile);
-      console.log('如需测试，可以使用 manifest 模板: ');
-      console.log('uapp manifest sync ' + path.join(sdkHomeDir, 'templates/manifest.json'));
       return;
     }
 
-    try {
-      let fstats = fs.lstatSync(localLinkManifest);
-      if (fstats.isSymbolicLink()) {
-        fs.unlinkSync(localLinkManifest);
-      } else {
-        let backupName = 'manifest-' + new Date().getTime() + '.json';
-        console.log('注意：当前目录不要直接使用 manifest.json 文件, 已更名为: ' + backupName);
-        fs.renameSync(localLinkManifest, localLinkManifest.replace('manifest.json', backupName));
-        return;
-      }
-    } catch (error) {}
+    if (manifestFile) {
+      localLinkManifest = path.join(appDir, '/manifest.json');
+      try {
+        let fstats = fs.lstatSync(localLinkManifest);
+        if (fstats.isSymbolicLink()) {
+          fs.unlinkSync(localLinkManifest);
+        } else {
+          let backupName = 'manifest-' + new Date().getTime() + '.json';
+          console.log('注意：将已存在 manifest.json 文件更名为: ' + backupName);
+          fs.renameSync(localLinkManifest, localLinkManifest.replace('manifest.json', backupName));
+        }
+      } catch (error) {}
 
-    fs.symlinkSync(manifestFile, localLinkManifest);
-    console.log('当前使用 manifest: ' + manifestFile);
-
-    manifest = getManifest();
-    manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
-
-    manifest.uapp.name = manifest.uapp[`${projectType}.name`] || manifest.uapp.name || manifest.name;
-    manifest.uapp.package = manifest.uapp[`${projectType}.package`] || manifest.uapp.package;
-    manifest.uapp.versionName = manifest.uapp[`${projectType}.versionName`] || manifest.versionName;
-    manifest.uapp.versionCode = manifest.uapp[`${projectType}.versionCode`] || manifest.versionCode;
-    manifest.uapp.appkey = manifest.uapp[`${projectType}.appkey`];
-
-    console.log();
-    console.log('- appid       : ' + manifest.appid);
-    console.log('- appName     : ' + manifest.uapp.name);
-    console.log('- package     : ' + manifest.uapp.package);
-    console.log('- versionName : ' + manifest.uapp.versionName);
-    console.log('- versionCode : ' + manifest.uapp.versionCode);
-    if (manifest.uapp.appkey) {
-      console.log('- appKey      : ' + manifest.uapp.appkey);
+      fs.symlinkSync(manifestFile, localLinkManifest);
     }
-    console.log();
 
-    if (args.argv.remain[1] === 'sync') {
-      projectType === 'android' && processAndroid();
-      projectType === 'ios' && processIOS();
+    if (!fs.existsSync(localLinkManifest)) {
+      console.log('找不到 manifest.json 文件，可参照下面命令: ');
+      console.log('uapp manifest path/to/manifest.json');
+      return;
+    }
+
+    console.log('当前使用 manifest: ' + manifestFile);
+    printManifestInfo(projectType);
+
+    if (projectType === 'android') {
+      processAndroid();
+    } else if (projectType === 'ios') {
+      processIOS();
     }
 
     return;
@@ -337,7 +317,7 @@ module.exports = function (inputArgs) {
 
   // command: uapp publish debug
   if (cmd === 'publish' && args.argv.remain[1] === 'debug') {
-    console.log('此命令已弃用，请使用 uapp run build:dev --sync');
+    console.log('此命令已弃用，请使用 uapp run build:dev');
     return;
   }
 
@@ -414,6 +394,13 @@ function getManifest() {
     let content = fs.readFileSync(localLinkManifest, 'utf8');
     manifest = JSON.parse(stripJsonComments(content));
   }
+
+  if (!manifest.uapp) {
+    throw new Error('manifest.json 中缺少 uapp 相关配置，请查看文档');
+  }
+
+  // 缺失的参数，默认使用模版里的
+  manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
   return manifest;
 }
 
@@ -484,12 +471,6 @@ public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
 
   replaceControlXml(path.join(appDir, 'app/src/debug/assets/data/dcloud_control.xml'));
   replaceControlXml(path.join(appDir, 'app/src/main/assets/data/dcloud_control.xml'));
-
-  let sdkLinkDir = path.join(appDir, 'app/libs');
-  try {
-    fs.unlinkSync(sdkLinkDir);
-  } catch (e) {}
-  fs.symlinkSync(path.join(sdkHomeDir, 'android/libs'), sdkLinkDir, 'dir');
 
   console.log('processAndroid successfully');
 }
@@ -571,6 +552,26 @@ function replaceControlXml(xmlFile) {
   let re = /(app appid=")(.+?)(")/g;
   content = content.replace(re, '$1' + manifest.appid + '$3');
   fs.writeFileSync(xmlFile, content);
+}
+
+function printManifestInfo(projectType) {
+  let manifest = getManifest();
+  manifest.uapp.name = manifest.uapp[`${projectType}.name`] || manifest.uapp.name || manifest.name;
+  manifest.uapp.package = manifest.uapp[`${projectType}.package`] || manifest.uapp.package || '';
+  manifest.uapp.versionName = manifest.uapp[`${projectType}.versionName`] || manifest.versionName;
+  manifest.uapp.versionCode = manifest.uapp[`${projectType}.versionCode`] || manifest.versionCode;
+  manifest.uapp.appkey = manifest.uapp[`${projectType}.appkey`];
+
+  console.log();
+  console.log('- appid       : ' + manifest.appid);
+  console.log('- appName     : ' + manifest.uapp.name);
+  console.log('- package     : ' + manifest.uapp.package);
+  console.log('- versionName : ' + manifest.uapp.versionName);
+  console.log('- versionCode : ' + manifest.uapp.versionCode);
+  if (manifest.uapp.appkey) {
+    console.log('- appKey      : ' + manifest.uapp.appkey);
+  }
+  console.log();
 }
 
 // generate jwt token for apple oauth login

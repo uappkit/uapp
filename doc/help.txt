@@ -4,7 +4,7 @@ uapp 通用命令🔥
   - 初始化或更新 uappsdk
     uapp sdk init
 
-  - 新建离线工程
+  - 新建指定平台工程
     uapp add android  // 当前目录下创建 android 工程
     uapp add ios      // 当前目录下创建 ios 工程
 
@@ -26,21 +26,23 @@ uapp 通用命令🔥
 需在工程模板下运行命令☘️
 
   - 核心命令: 读取 manifest.json 配置, 并更新 android 或 ios 工程
-    uapp manifest sync ${webapp}/src/manifest.json
-    uapp manifest info (仅查看信息, 不执行 sync)
+    uapp manifest path/to/manifest.json
 
-  - 复制 HBuilderX 生成的本地打包APP资源
+  - 复制 HBuilderX 生成的App图标和本地打包资源
     uapp prepare
 
-  - 发布离线打包基座到 HBuilderX 下
-    uapp run build:dev --sync (uapp publish debug 将弃用)
-
-  - 编译开发包，不发布
+  - 编译并发布自定义基座到 HBuilderX 下
     uapp run build:dev
 
+  - 编译开发包，不发布
+    uapp run build:dev --no-copy
+
   - 编译 release 包
-    // 注意: 因为iOS发布，需要走苹果的发布流程，所以不支持iOS，iOS发布直接用 xcode
+    // iOS 平台请直接使用 Xcode 发布
     uapp run build
+
+  - 运行自定义打包发布流程，配置见 README.md
+    uapp run custom
 
 其他命令:
 
