@@ -241,7 +241,7 @@ module.exports = function (inputArgs) {
       require('child_process').execSync(gradle + ` ${assembleTypeMap[buildType]}`, { stdio: 'inherit' });
       let buildOutFile = path.join(appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
 
-      if (buildType === 'build:dev' && !args['no-copy']) {
+      if (buildType === 'build:dev' && args.copy) {
         sync(
           buildOutFile,
           path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/android_debug.apk')
@@ -271,7 +271,7 @@ module.exports = function (inputArgs) {
         { stdio: 'inherit' }
       );
 
-      if (!args['no-copy']) {
+      if (args.copy) {
         sync(
           path.join(appDir, 'out/HBuilder.ipa'),
           path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/ios_debug.ipa')
