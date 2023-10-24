@@ -396,12 +396,14 @@ function cleanEmptyFoldersRecursively(folder) {
 
 function checkManifest() {
   if (!fs.existsSync(localLinkManifest)) {
-    console.log('请先执行 `uapp manifest sync` 指定 manifest.json 文件');
+    console.log('请先执行 `uapp manifest path/to/manifest.json` 指定 manifest.json 文件');
     process.exit(-1);
   }
 }
 
 function getManifest() {
+  checkManifest();
+
   if (fs.existsSync(localLinkManifest)) {
     let content = fs.readFileSync(localLinkManifest, 'utf8');
     manifest = JSON.parse(stripJsonComments(content));
