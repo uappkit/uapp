@@ -1,6 +1,6 @@
 {
   "name": "uapp",
-  "version": "2.2.9",
+  "version": "2.2.10",
   "description": "uapp 是一款跨平台APP开发工具箱。uapp 通过集成 uniapp，electron，tauri，让开发者仅需写一套代码，就能横扫所有平台",
   "main": "bin/uapp",
   "bin": {
@@ -26,6 +26,7 @@
     "jsonwebtoken": ">=9.0.0",
     "lodash": ">=4.17.21",
     "nopt": "^5.0.0",
+    "ora": "^5.4.1",
     "tiged": "^2.12.5",
     "update-notifier": "^5.1.0"
   },

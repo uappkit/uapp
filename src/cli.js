@@ -9,6 +9,8 @@ const _ = require('lodash');
 const nopt = require('nopt');
 const updateNotifier = require('update-notifier');
 const fs = require('fs');
+const ora = require('ora');
+
 const path = require('path');
 const tiged = require('tiged');
 const chalk = require('chalk');
@@ -81,11 +83,7 @@ module.exports = function (inputArgs) {
           branch = '#vite-ts';
         }
 
-        tiged(`git@gitee.com:dcloud/uni-preset-vue.git${branch}`, { cache: true, force: false, verbose: true })
-          .on('info', info => {
-            console.log(info.message);
-          })
-          .clone(projectName);
+        clone(`git@gitee.com:dcloud/uni-preset-vue.git${branch}`, projectName);
       }
       return;
     }
@@ -212,11 +210,7 @@ module.exports = function (inputArgs) {
       return;
     }
 
-    return tiged(`git@gitee.com:uappkit/platform.git/${platform}#main`, { cache: true, force: false, verbose: true })
-      .on('info', info => {
-        console.log(info.message);
-      })
-      .clone(platform);
+    return clone(`git@gitee.com:uappkit/platform.git/${platform}#main`, platform);
   }
 
   // commands:
@@ -685,6 +679,16 @@ function printAndroidKeyInfo(gradle) {
   console.log();
   console.log('----------');
   console.log(r[0]);
+}
+
+function clone(url, projectName) {
+  const spinner = ora();
+  spinner.start('正在下载中，请稍后...');
+  tiged(url, { cache: true, force: false, verbose: true })
+    .on('info', info => {
+      spinner.succeed(info.message);
+    })
+    .clone(projectName);
 }
 
 function printHelp() {
