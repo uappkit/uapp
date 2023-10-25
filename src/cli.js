@@ -309,7 +309,7 @@ module.exports = function (inputArgs) {
       return;
     }
 
-    console.log('当前使用 manifest: ' + manifestFile);
+    console.log('当前使用 manifest: ' + (manifestFile || localLinkManifest));
     printManifestInfo(projectType);
 
     if (projectType === 'android') {
@@ -403,8 +403,21 @@ function getManifest() {
     manifest = JSON.parse(stripJsonComments(content));
   }
 
+  if (!manifest.appid) {
+    console.log(chalk.yellow('manifest.json 中缺少 appid，请打开 HBuilderX 获取'));
+  }
+
   if (!manifest.uapp) {
-    throw new Error('manifest.json 中缺少 uapp 相关配置，请查看文档');
+    console.log(chalk.yellow('manifest.json 中缺少 uapp 节点，请复制并添加如下内容'));
+    console.log(`
+"uapp": {
+  "name": "μAppKit",
+  "package": "com.code0xff.uapp",
+  "android.appkey": "申请并替换为 android dcloudkey",
+  "ios.appkey": "申请并替换为 ios dcloudkey"
+},
+    `);
+    process.exit(-1);
   }
 
   // 缺失的参数，默认使用模版里的
