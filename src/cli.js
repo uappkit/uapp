@@ -25,7 +25,7 @@ const knownOpts = {
   typescript: Boolean,
   alpha: Boolean,
   vue2: Boolean,
-  'no-copy': Boolean
+  copy: Boolean
 };
 
 const shortHands = {
@@ -45,6 +45,10 @@ module.exports = function (inputArgs) {
   if (args.version) {
     console.log('uapp 当前版本: ' + pkg.version);
     return;
+  }
+
+  if (args.copy === undefined) {
+    args.copy = true;
   }
 
   // command: uapp help
