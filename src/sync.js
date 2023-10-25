@@ -15,8 +15,8 @@ const notifyPriority = {
   'no-delete': 'low'
 };
 
-module.exports = function (source, target) {
-  syncFiles(source, target, {}, function (event, data) {
+module.exports = function (source, target, opts) {
+  syncFiles(source, target, opts, function (event, data) {
     switch (event) {
       case 'error':
         console.error(chalk.bold.red(data.message || data));
@@ -60,7 +60,7 @@ module.exports = function (source, target) {
 function syncFiles(source, target, opts, notify) {
   opts = _.defaults(opts || {}, {
     watch: false,
-    delete: true,
+    delete: false,
     depth: Infinity,
   });
 

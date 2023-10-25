@@ -91,7 +91,7 @@ module.exports = function (inputArgs) {
 
   // command: uapp sdk init
   if (cmd === 'sdk' && args.argv.remain[1] === 'init') {
-    sync(path.resolve(__dirname, '../uappsdk'), sdkHomeDir);
+    sync(path.resolve(__dirname, '../uappsdk'), sdkHomeDir, { delete: false });
     console.log(chalk.green('--- uappsdk 已安装 ---'));
     return;
   }
@@ -181,7 +181,7 @@ module.exports = function (inputArgs) {
 
     fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
     fs.mkdirSync(embedAppsDir, { recursive: true });
-    sync(compiledDir, embedAppsDir);
+    sync(compiledDir, embedAppsDir, { delete: true });
     console.log(chalk.green('打包APP资源已就绪'));
     return;
   }
@@ -278,7 +278,7 @@ module.exports = function (inputArgs) {
     return;
   }
 
-  // commands:
+  // command:
   // uapp manifest path/to/manifest.json
   if (cmd === 'manifest') {
     let manifestFile = args.argv.remain[1];
@@ -590,7 +590,7 @@ function iconsSyncToIOS(resDir) {
     if (['72x72.png', '96x96.png', '144x144.png', '192x192.png'].includes(file)) return;
 
     const fullPath = path.join(resDir, file);
-    sync(fullPath, path.join(appDir, '/Main/Resources/Images.xcassets/AppIcon.appiconset/', file));
+    sync(fullPath, path.join(appDir, '/Main/Resources/Images.xcassets/AppIcon.appiconset/', file), { delete: true });
   });
 
   sync(path.join(resDir, '120x120.png'), path.join(appDir, 'Main/Resources/logo@2x.png'));
