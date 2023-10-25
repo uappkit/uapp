@@ -8,11 +8,11 @@ uapp 通用命令🔥
     uapp add android  // 当前目录下创建 android 工程
     uapp add ios      // 当前目录下创建 ios 工程
 
-  - 生成 android 的签名文件 app.keystore
-    uapp keygen
-
   - 显示APP开发中会用到的配置信息
     uapp info [jwt|key] (不指定 jwt|key 会自动判断)
+
+  - 生成 android 的签名文件 app.keystore
+    uapp keygen
 
   - 新建一个基于 uniapp-cli 的工程，默认使用 vite vue3
     uapp new ${projectName}
@@ -28,7 +28,7 @@ uapp 通用命令🔥
   - 核心命令: 读取 manifest.json 配置, 并更新 android 或 ios 工程
     uapp manifest path/to/manifest.json
 
-  - 复制 HBuilderX 生成的App图标和本地打包资源
+  - 更新 HBuilderX 生成的App图标和本地打包资源
     uapp prepare
 
   - 编译并发布自定义基座到 HBuilderX 下
@@ -48,13 +48,6 @@ uapp 通用命令🔥
 
     uapp -v 或 --version (查看 uapp 版本)
     uapp help 或 -h 或 --help (查看帮助)
-
-示例:
-
-    uapp keygen
-    uapp info jwt
-    uapp -h
-    uapp --version
 
 工程模板代码位置:
 

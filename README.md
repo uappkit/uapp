@@ -9,8 +9,7 @@ const uapp = 'universal app'
 
 uapp 是一款跨平台APP开发工具箱，所有积累都来自多年产品开发中的不断实践。开发者仅需写一套代码，就能横扫所有平台。
 
-uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序(
-微信/抖音/百度/QQ/飞书/钉钉/快应用等等)，也能支持所有的浏览器插件开发。
+uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序( 微信/抖音/百度/QQ/飞书/钉钉/快应用等等)，也能支持所有的浏览器插件开发。
 
 多一个平台，就多了一个流量渠道，多一个平台，就多个一个用户选择的理由。传统的开发形式，不同平台需要不同的开发者经验，uapp 通过集成
 uniapp，electron，tauri，只需要开发者有Web H5的开发经验，就能搞定所有平台。哪怕只开发一个平台，同样花时间写代码，为什么不选择复用价值更高的方法呢。
@@ -61,7 +60,7 @@ uni-app 在线打包，一般无法满足灵活的需求，比如：
 * 在线打包有大小限制，超过需要单独付费，因为特别占用官方服务器资源。
 * 写uniapp插件扩展时，前提是必须有个好用的离线工程。
 
-## 先安装 uappsdk
+## 一、先安装 uappsdk
 
 1、 安装 uapp 命令
 
@@ -114,7 +113,52 @@ uapp sdk init
 
 <https://nativesupport.dcloud.net.cn/AppDocs/usemodule/iOSModuleConfig/common>
 
-## 新建离线打包工程
+## 二、Vue 工程 (重点看) 🔥
+
+Vue 工程，有两种创建方法：
+
+第一种：通过 `uapp new` (等同于 uniapp-cli) 命令创建
+
+```bash
+# 不带参数，默认使用 vu3 & vite 模版
+uapp new DemoProject
+
+# 支持参数
+uapp new DemoProject --alpha --typescript
+uapp new DemoProject --vue2 # 旧的 vue2 模版
+```
+
+第二种，通过 HBuilderX 菜单里新建工程，和第一种cli创建的区别是，HBuilderX 创建不带 package.json 和 src 目录，等同于直接就是
+src 目录里的内容。
+
+<p style="color: #ef1788; font-weight: bold">创建好 Vue 工程后，一定要参照下面流程，获取 appid，和添加 uapp 节点。</p>
+
+☘️ HBuilderX 打开工程，再选中 manifest.json 配置
+
+- (必须) 基础配置 => 确定获取到 appid
+- (必须) 源码视图 => versionCode 下面添加 uapp 节点，内容如下：
+
+```json
+{
+  // ...
+  "versionCode": "100",
+  "uapp": {
+    "name": "μAppKit",
+    "package": "com.code0xff.uapp",
+    "android.appkey": "申请并替换为 android dcloudkey",
+    "ios.appkey": "申请并替换为 ios dcloudkey"
+  },
+  // ...
+}
+```
+
+- (建议) App图标配置 => 浏览选择图标文件 => 自动生成
+
+- (建议) App模块配置 => OAuth 登录鉴权 => (微信登录, iOS Universal Links)
+
+> 👉 `dcloudkey` 后台申请的链接，和要填写的内容，可通过 `uapp info` 命令查看，非常方便。
+
+## 三、离线打包工程
 
 ### 1. 新建 android 工程
 
@@ -129,14 +173,16 @@ uapp sdk init
 iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适合 DCloud离线SDK 的发布形式。经过我们在产品中的不断实践，最终选择了
 XCodeGen。
 
-### 3. 工程下常见命令
+### 3. 离线工程下常见命令
 
 ```
 # 读取 manifest 中的配置，并更新基本信息
 uapp manifest path/to/manifest.json
 
-# 更新 HBuilderX 本地打包资源
-# 如果通过 HBuilderX 重新编译，或者通过 uniapp-cli 命令重新编译的资源，可以通过 prepare 命令更新到离线 APP 工程中，用于 APP 重新打包发布。
+# 查看 dcloudkey 和对接第三方平台需要的信息
+uapp info
+
+# 更新 HBuilderX 生成的App图标和本地打包资源
 uapp prepare
 
 # 编译并发布自定义基座到 HBuilderX 下
@@ -146,7 +192,7 @@ uapp run build:dev
 uapp run custom
 ```
 
-## manifest.json 相关配置
+## 四、manifest.json 相关配置
 
 > 注意: `uapp.* 参数` 是 uapp 根据需要扩展出来的, 非 dcloud 官方标准.
 
@@ -186,11 +232,13 @@ uapp run custom
 
 👉 不同平台可以用前缀区分
 
-> name, package, versionName, versionCode 如果需要平台差异化定义, 可以加前缀 android.xxx, ios.xxx
->
-> 例如 android.name, android.package, ios.package, ios.versionCode ...
->
-> custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json 的同级目录，支持加 ../定位上一级目录，避免用绝对路径。
+<blockquote>
+name, package, versionName, versionCode 如果需要平台差异化定义, 可以加前缀 android.*, ios.*
+
+例如 android.name, android.package, ios.package, ios.versionCode ...
+
+custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json 的同级目录，支持加 ../定位上一级目录，避免用绝对路径。
+</blockquote>
 
 👇👇 👇
 
@@ -204,21 +252,9 @@ uapp run custom
 | versionCode    | App版本Code，同上可以加前缀区分不同平台。如 ios.versionCode                                                            |
 | custom.command | (选填) uapp run custom 执行的自定义命令。比如一条命令里做很多事: `npm run build:app && uapp prepare && uapp run build:dev` |
 
-**如何申请 dcloud_appkey**
+## 五、其他参考
 
-<https://nativesupport.dcloud.net.cn/AppDocs/usesdk/appkey>
-
-**如何申请微信 appid**
-
-登录微信开发者平台创建APP，审核过后，获取 `weixin.appid, weixin.appsecret` 等参数，用于微信登录，分享，支付等相关参数
-
-<https://open.weixin.qq.com/>
-
-## 跨端开发注意事项
-
-<https://uniapp.dcloud.io/matter.html>
-
-## iOS 苹果授权登录
+### iOS 苹果授权登录
 
 1、获取到 team_id, client_id, key_id 填入到 jwt/config.json 中，如下：
 
@@ -234,7 +270,23 @@ uapp run custom
 
 3、运行 `uapp info` 命令查看 JWT Token
 
-👉 参考教程: http://help.jwt.code0xff.com
+👉 参考教程: <http://help.jwt.code0xff.com>
+
+### 如何申请 dcloud_appkey
+
+<https://nativesupport.dcloud.net.cn/AppDocs/usesdk/appkey>
+
+### 如何申请微信 appid
+
+登录微信开发者平台创建APP，审核过后，获取 `weixin.appid, weixin.appsecret` 等参数，用于微信登录，分享，支付等相关参数
+
+<https://open.weixin.qq.com/>
+
+### 跨端开发注意事项
+
+<https://uniapp.dcloud.io/matter.html>
+
+---
 
 ## uapp 使用帮助
 
