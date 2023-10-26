@@ -120,7 +120,7 @@ Vue 工程，有两种创建方法：
 第一种：通过 `uapp new` (等同于 uniapp-cli) 命令创建
 
 ```bash
-# 不带参数，默认使用 vu3 & vite 模版
+# 不带参数，默认使用 vue3 & vite 模版
 uapp new DemoProject
 
 # 支持参数
@@ -131,14 +131,14 @@ uapp new DemoProject --vue2 # 旧的 vue2 模版
 第二种，通过 HBuilderX 菜单里新建工程，和第一种cli创建的区别是，HBuilderX 创建不带 package.json 和 src 目录，等同于直接就是
 src 目录里的内容。
 
-<p style="color: #ef1788; font-weight: bold">创建好 Vue 工程后，一定要参照下面流程，获取 appid，和添加 uapp 节点。</p>
+**创建好 Vue 工程后，一定要参照下面流程，获取 appid，和添加 uapp 节点。**
 
 ☘️ HBuilderX 打开工程，再选中 manifest.json 配置
 
 - (必须) 基础配置 => 确定获取到 appid
 - (必须) 源码视图 => versionCode 下面添加 uapp 节点，内容如下：
 
-```json
+```json5
 {
   // ...
   "versionCode": "100",
