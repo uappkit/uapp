@@ -87,7 +87,7 @@ module.exports = function (inputArgs) {
           branch = '#vite-ts';
         }
 
-        clone(`git@gitee.com:dcloud/uni-preset-vue.git${branch}`, projectName);
+        clone(`https://gitee.com/dcloud/uni-preset-vue.git${branch}`, projectName);
       }
       return;
     }
@@ -214,7 +214,7 @@ module.exports = function (inputArgs) {
       return;
     }
 
-    return clone(`git@gitee.com:uappkit/platform.git/${platform}#main`, platform);
+    return clone(`https://gitee.com/uappkit/platform.git/${platform}#main`, platform);
   }
 
   // commands:
