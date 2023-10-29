@@ -1,4 +1,4 @@
-![uapp.dev](./doc/uapp.dev.png)
+![uapp.dev](https://mixcut.b0.v56.fun/uapp/uapp.dev.png)
 
 ## 了解 uapp 跨平台开发工具箱
 
@@ -30,38 +30,13 @@ uniapp，electron，tauri，只需要开发者有Web H5的开发经验，就能�
 
 ---
 
-**uniapp 用一套代码，运行到多个平台**
+**Android Build**
 
-![](https://vkceyugu.cdn.bspapp.com/VKCEYUGU-a90b5f95-90ba-4d30-a6a7-cd4d057327db/ec6e95dd-77ad-4d14-aafa-ca503f5b9e53.jpg)
+![android build](https://mixcut.b0.v56.fun/uapp/android_build.gif)
 
-uni-app 官方发布的离线包 SDK 里有DEMO工程，但对于一个新的项目，需要手动更改的配置较多，且容易出错。DEMO工程里的调试基座和正式发版共用一个配置，维护起来也很不方便。
+**iOS Build**
 
-uapp做了很多标准化工作，分离了调试和发布的配置，也方便通过命令加入自动化集成。
-
-开发过程中，很多繁琐的操作用`uapp`都是一步搞定:
-
-* 开起一个新项目，通常要修改工程里的很多参数，比如app的名称，版本号, dcloud_key, 微信相关的 appkey
-  等，人工不仅繁琐，还容易出错，使用 `uapp manifest` 一步搞定。
-* APP发布和开发调试时的配置不完全相同，比如你不能把 debug-server-release.aar
-  这种调试相关的库发布，那就需要把发布和开发的配置隔离开，uapp已经帮你做好隔离配置，并且很方便通过jenkins实现发布流程的自动化集成，即使不需要也好过手动改来改去，把自己都改晕了。
-* 自己编译个调试基座，还需要手动 COPY 到 HBuilderX 下？用 `uapp run build:dev` 自动编译一步搞定。
-* HBuilderX 本地打包资源，App使用的图标等，还需要手动 COPY 到工程里? 用 `uapp prepare` 一步搞定。
-* 微信开发者平台，[DCloud 开发者中心](http://dev.dcloud.net.cn) 都需要的签名信息怎么查看，`uapp info` 一步搞定。
-* uniapp-cli 创建新工程的命令是啥了的，没记住，`uapp new` 一步搞定。
-
-**为什么不建议在线云打包呢?**
-
-* 在线打包有 40M 上限，且超过免费次数，就要单独计费。
-* 因为在线打包占用服务器资源，需排队等待，即便打包失败也会计费。
-* 缺少一定的自由，有些包是冗余的，在线打包不能控制具体打入哪些包。
-* 没法在团队里实施自动化集成（自动构建、单元测试、发布）。
-* 写 uni-app 扩展插件时，前提是必须有个好用的离线工程。
-
-**HBuilderX 在线云打包收费说明**
-
-<https://dev.dcloud.net.cn/pages/cloudbuild/appsize>
-
-> 如果使用 uapp 自己制作离线包，就能省去上面这些费用
+![ios build](https://mixcut.b0.v56.fun/uapp/ios_build.gif)
 
 ## 一、先安装 uappsdk
 
@@ -303,4 +278,4 @@ The Apache License 2. Please see [License File](LICENSE.md) for more information
 
 如果你在使用 uapp 中，遇到问题，或有改进建议，欢迎联系
 
-+VX: `yinqisen`
++vx: `yinqisen`
