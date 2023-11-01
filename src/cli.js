@@ -25,7 +25,9 @@ const knownOpts = {
   typescript: Boolean,
   alpha: Boolean,
   vue2: Boolean,
-  copy: Boolean
+  copy: Boolean,
+  webapp: Boolean,
+  prepare: Boolean
 };
 
 const shortHands = {
@@ -37,6 +39,8 @@ const appDir = process.cwd();
 const sdkHomeDir = path.join(require('os').homedir(), '.uappsdk');
 let localLinkManifest = path.join(appDir, 'manifest.json');
 let manifest = '';
+let webAppDir = '';
+let projectType = 'unknown';
 
 module.exports = function (inputArgs) {
   checkForUpdates();
@@ -49,6 +53,14 @@ module.exports = function (inputArgs) {
 
   if (args.copy === undefined) {
     args.copy = true;
+  }
+
+  if (args.webapp === undefined) {
+    args.webapp = true;
+  }
+
+  if (args.prepare === undefined) {
+    args.prepare = true;
   }
 
   // command: uapp help
@@ -100,12 +112,34 @@ module.exports = function (inputArgs) {
     return;
   }
 
-  // check project
-  let projectType = 'unknown';
+  // command: uapp add ${platform}
+  // support platforms: android, ios
+  if (cmd === 'add') {
+    let platform = args.argv.remain[1];
+    let supportPlatform = ['android', 'ios'];
+    if (!supportPlatform.includes(platform)) {
+      console.log(`不支持平台 ${platform}, 当前支持的平台有: ${supportPlatform.join(', ')}`);
+      return;
+    }
+
+    return clone(`https://gitee.com/uappkit/platform.git/${platform}#main`, platform);
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | 命令分水岭
+  | * 上面命令不需要限制项目目录下
+  | * 下面命令需要限制在项目下运行
+  |--------------------------------------------------------------------------
+  */
   if (fs.existsSync(path.join(appDir, 'Main/AppDelegate.m'))) {
     projectType = 'ios';
   } else if (fs.existsSync(path.join(appDir, '/app/build.gradle'))) {
     projectType = 'android';
+  }
+
+  if (projectType === 'unknown') {
+    return console.log('无法确定项目类型，请在android或ios工程下运行命令');
   }
 
   // command: uapp keygen
@@ -133,7 +167,7 @@ module.exports = function (inputArgs) {
 
   // command: uapp info, uapp info jwt, uapp info key
   if (cmd === 'info' && (!args.argv.remain[1] || args.argv.remain[1] === 'jwt' || args.argv.remain[1] === 'key')) {
-    printManifestInfo(projectType);
+    printManifestInfo();
 
     if ((projectType === 'ios' && !args.argv.remain[1]) || args.argv.remain[1] === 'jwt') {
       printJWTToken();
@@ -160,33 +194,7 @@ module.exports = function (inputArgs) {
 
   // command: uapp prepare
   if (cmd === 'prepare') {
-    let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
-    let resDir = path.join(srcDir, 'unpackage/res/icons');
-    // 如果没生成过图标目录, 跳过
-    if (pathExistsSync(resDir)) {
-      if (projectType === 'android') {
-        iconsSyncToAndroid(resDir);
-      } else if (projectType === 'ios') {
-        iconsSyncToIOS(resDir);
-      }
-    } else {
-      console.log('未发现图标资源，跳过App图标更新');
-      console.log('请先使用 HBuilderX => manifest.json 配置里的 App图标配置，自动生成所有图标。再运行 uapp prepare 替换');
-    }
-
-    checkManifest();
-    manifest = getManifest();
-    let compiledDir = path.join(srcDir, 'unpackage/resources/', manifest.appid);
-    let embedAppsDir = path.join(
-      appDir,
-      projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
-      manifest.appid
-    );
-
-    fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
-    fs.mkdirSync(embedAppsDir, { recursive: true });
-    sync(compiledDir, embedAppsDir, { delete: true });
-    console.log(chalk.green('打包APP资源已就绪'));
+    prepareCommand();
     return;
   }
 
@@ -197,31 +205,25 @@ module.exports = function (inputArgs) {
     if (!command) {
       console.log('自定义命令为空，请参照文档中的 custom.command 配置');
     } else {
-      let srcDir = path.dirname(fs.realpathSync(localLinkManifest));
-      command = command.replace(/\$\{SRC\}/g, srcDir);
+      command = command.replace(/\$\{SRC\}/g, webAppDir);
       require('child_process').execSync(command, { stdio: 'inherit' });
     }
     return;
-  }
-
-  // command: uapp add ${platform}
-  // support platforms: android, ios
-  if (cmd === 'add') {
-    let platform = args.argv.remain[1];
-    let supportPlatform = ['android', 'ios'];
-    if (!supportPlatform.includes(platform)) {
-      console.log(`不支持平台 ${platform}, 当前支持的平台有: ${supportPlatform.join(', ')}`);
-      return;
-    }
-
-    return clone(`https://gitee.com/uappkit/platform.git/${platform}#main`, platform);
   }
 
   // commands:
   // uapp run build
   // uapp run build:dev { --no-copy | 不复制到 hbx 自定义基座 }
   if (cmd === 'run' && (args.argv.remain[1] === 'build' || args.argv.remain[1] === 'build:dev')) {
-    checkManifest();
+    getManifest();
+
+    if (args.webapp) {
+      buildWebApp();
+    }
+
+    if (args.prepare) {
+      prepareCommand();
+    }
 
     let buildType = args.argv.remain[1];
     if (projectType === 'android') {
@@ -240,10 +242,7 @@ module.exports = function (inputArgs) {
       let buildOutFile = path.join(appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
 
       if (buildType === 'build:dev' && args.copy) {
-        sync(
-          buildOutFile,
-          path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/android_debug.apk')
-        );
+        sync(buildOutFile, path.join(webAppDir, 'unpackage/debug/android_debug.apk'));
       }
 
       console.log('\n编译成功，安装包位置: ');
@@ -254,6 +253,14 @@ module.exports = function (inputArgs) {
     if (projectType === 'ios') {
       if (buildType !== 'build:dev') {
         console.log('iOS仅支持自定义基座打包`uapp run build:dev`，如正式版发布请直接使用 xcode');
+        return;
+      }
+
+      try {
+        require('child_process').execSync('xcodegen', { stdio: 'inherit' });
+      } catch (e) {
+        console.log('请先安装 xcodegen, 可通过 brew install xcodegen 安装, 参考 iOS 配置文档: ');
+        console.log('👉 https://gitee.com/uappkit/platform/blob/main/ios/README.md');
         return;
       }
 
@@ -272,7 +279,7 @@ module.exports = function (inputArgs) {
       if (args.copy) {
         sync(
           path.join(appDir, 'out/HBuilder.ipa'),
-          path.join(path.dirname(fs.realpathSync(localLinkManifest)), 'unpackage/debug/ios_debug.ipa')
+          path.join(webAppDir, 'unpackage/debug/ios_debug.ipa')
         );
       }
       return;
@@ -314,14 +321,7 @@ module.exports = function (inputArgs) {
     }
 
     console.log('当前使用 manifest: ' + (manifestFile || localLinkManifest));
-    printManifestInfo(projectType);
-
-    if (projectType === 'android') {
-      processAndroid();
-    } else if (projectType === 'ios') {
-      processIOS();
-    }
-
+    printManifestInfo();
     return;
   }
 
@@ -424,16 +424,60 @@ function getManifest() {
     process.exit(-1);
   }
 
+  webAppDir = path.dirname(fs.realpathSync(localLinkManifest));
+
+  manifest.uapp.name = manifest.uapp[`${projectType}.name`] || manifest.uapp.name || manifest.name;
+  manifest.uapp.package = manifest.uapp[`${projectType}.package`] || manifest.uapp.package || '';
+  manifest.uapp.versionName = manifest.uapp[`${projectType}.versionName`] || manifest.versionName;
+  manifest.uapp.versionCode = manifest.uapp[`${projectType}.versionCode`] || manifest.versionCode;
+  manifest.uapp.appkey = manifest.uapp[`${projectType}.appkey`];
+
   // 缺失的参数，默认使用模版里的
   manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
   return manifest;
+}
+
+function prepareCommand() {
+  manifest = getManifest();
+  let compiledDir = path.join(webAppDir, 'unpackage/resources/', manifest.appid);
+  if (!pathExistsSync(compiledDir)) {
+    console.log(chalk.red('找不到本地App打包资源'));
+    console.log('请使用 HBuilderX => 发行(菜单) => 原生App本地打包 => 生成本地打包App资源');
+    process.exit(-1);
+  }
+
+  let resDir = path.join(webAppDir, 'unpackage/res/icons');
+  // 如果没生成过图标目录, 跳过
+  if (pathExistsSync(resDir)) {
+    if (projectType === 'android') {
+      updateAndroidMetaData();
+      updateAndroidIcons(resDir);
+    } else if (projectType === 'ios') {
+      updateIOSMetaData();
+      updateIOSIcons(resDir);
+    }
+  } else {
+    console.log(chalk.yellow('未发现图标资源，跳过App图标更新'));
+    console.log('更新图标请使用 HBuilderX => manifest.json 配置 => App图标配置 => 自动生成所有图标\n');
+  }
+
+  let embedAppsDir = path.join(
+    appDir,
+    projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
+    manifest.appid
+  );
+
+  fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
+  fs.mkdirSync(embedAppsDir, { recursive: true });
+  sync(compiledDir, embedAppsDir, { delete: true });
+  console.log(chalk.green('打包APP资源已就绪'));
 }
 
 /*
  * android platform
  */
 
-function processAndroid() {
+function updateAndroidMetaData() {
   let wxEntryActivityFile = 'WXEntryActivity.java';
   let wXPayEntryActivityFile = 'WXPayEntryActivity.java';
 
@@ -497,21 +541,22 @@ public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
   replaceControlXml(path.join(appDir, 'app/src/debug/assets/data/dcloud_control.xml'));
   replaceControlXml(path.join(appDir, 'app/src/main/assets/data/dcloud_control.xml'));
 
-  console.log('processAndroid successfully');
+  console.log('✅ updateAndroidMetaData');
 }
 
-function iconsSyncToAndroid(resDir) {
+function updateAndroidIcons(resDir) {
   sync(
     path.join(resDir, '144x144.png'),
     path.join(appDir, 'app/src/main/res/drawable-xxhdpi/icon.png')
   );
+  console.log('✅ updateAndroidIcons');
 }
 
 /*
  * ios platform
  */
 
-function processIOS() {
+function updateIOSMetaData() {
   let baseYamlFile = path.join(appDir, 'config/base.yml');
   let content = fs.readFileSync(baseYamlFile, 'utf-8');
 
@@ -540,8 +585,7 @@ function processIOS() {
     }
   }
 
-  // require('child_process').execSync('xcodegen', { stdio: 'inherit' });
-  console.log('processIOS successfully');
+  console.log('✅ updateIOSMetaData');
 }
 
 function replaceStoryboard(storyboardFile) {
@@ -586,7 +630,7 @@ function replaceControlXml(xmlFile) {
   fs.writeFileSync(xmlFile, content);
 }
 
-function iconsSyncToIOS(resDir) {
+function updateIOSIcons(resDir) {
   let iconFiles = fs.readdirSync(resDir);
   iconFiles.forEach(function (file) {
     if (!file.endsWith('.png')) return;
@@ -599,15 +643,11 @@ function iconsSyncToIOS(resDir) {
 
   sync(path.join(resDir, '120x120.png'), path.join(appDir, 'Main/Resources/logo@2x.png'));
   sync(path.join(resDir, '180x180.png'), path.join(appDir, 'Main/Resources/logo@3x.png'));
+  console.log('✅ updateIOSIcons');
 }
 
-function printManifestInfo(projectType) {
+function printManifestInfo() {
   let manifest = getManifest();
-  manifest.uapp.name = manifest.uapp[`${projectType}.name`] || manifest.uapp.name || manifest.name;
-  manifest.uapp.package = manifest.uapp[`${projectType}.package`] || manifest.uapp.package || '';
-  manifest.uapp.versionName = manifest.uapp[`${projectType}.versionName`] || manifest.versionName;
-  manifest.uapp.versionCode = manifest.uapp[`${projectType}.versionCode`] || manifest.versionCode;
-  manifest.uapp.appkey = manifest.uapp[`${projectType}.appkey`];
 
   console.log();
   console.log('- appid       : ' + manifest.appid);
@@ -696,6 +736,35 @@ function printAndroidKeyInfo(gradle) {
   console.log();
   console.log('----------');
   console.log(r[0]);
+}
+
+function buildWebApp() {
+  let isWindows = require('os').type() === 'Windows_NT';
+  let cli = isWindows ? 'cli.exe' : 'cli';
+
+  let hbxCli = '/Applications/HBuilderX.app/Contents/MacOS/cli';
+  if (!isWindows && fs.existsSync(hbxCli)) {
+    cli = hbxCli;
+  }
+
+  let command = cli + ` publish --platform APP --type appResource --project "${webAppDir}"`;
+  try {
+    console.log(chalk.yellow('请确定 HBuilderX 已打开，并且已导入工程，否则会导致 webapp 未编译'));
+    require('child_process').execSync(cli + ' open', { stdio: 'inherit' });
+    require('child_process').execSync(command, { stdio: 'inherit' });
+  } catch (e) {
+    console.log();
+    console.log('请确定配置过 cli 环境变量，参考如下文档:');
+    console.log('👉 https://hx.dcloud.net.cn/cli/env\n');
+    process.exit(-1);
+  }
+
+  // cli 内部发生错误
+  let compiledDir = path.join(webAppDir, 'unpackage/resources/', manifest.appid);
+  if (!pathExistsSync(compiledDir)) {
+    console.log(chalk.red('webapp 打包失败，请通过 HBuilderX 控制台查看具体原因'));
+    process.exit(-1);
+  }
 }
 
 function clone(url, projectName) {

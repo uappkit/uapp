@@ -9,7 +9,8 @@ const uapp = 'universal app'
 
 uapp 是一款跨平台APP开发工具箱，所有积累都来自多年产品开发中的不断实践。开发者仅需写一套代码，就能横扫所有平台。
 
-uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序( 微信/抖音/百度/QQ/飞书/钉钉/快应用等等)，也能支持所有的浏览器插件开发。
+uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序(
+微信/抖音/百度/QQ/飞书/钉钉/快应用等等)，也能支持所有的浏览器插件开发。
 
 多一个平台，就多了一个流量渠道，多一个平台，就多个一个用户选择的理由。传统的开发形式，不同平台需要不同的开发者经验，uapp 通过集成
 uniapp，electron，tauri，只需要开发者有Web H5的开发经验，就能搞定所有平台。哪怕只开发一个平台，同样花时间写代码，为什么不选择复用价值更高的方法呢。
@@ -84,7 +85,7 @@ uapp sdk init
 
 **android 模块依赖说明:**
 
-针对 android，将依赖的包名放入工程目录 `app/libs.txt` 文件内，每个包名一行。
+针对 android，将依赖的包名放入工程目录 `app/sdk.libs` 文件内，每个包名一行。
 <https://nativesupport.dcloud.net.cn/AppDocs/usemodule/androidModuleConfig/android_Library>
 
 **ios 模块依赖说明:**
@@ -163,8 +164,20 @@ uapp info
 # 更新 HBuilderX 生成的App图标和本地打包资源
 uapp prepare
 
-# 编译并发布自定义基座到 HBuilderX 下
+# 编译APP安装包, 并发布自定义基座到 HBuilderX 下
 uapp run build:dev
+
+# 仅编译APP安装包，但不编译 webapp
+uapp run build:dev --no-webapp
+
+# 仅编译APP安装包，但不执行 prepare 更新资源
+uapp run build:dev --no-webapp
+
+# 仅编译APP安装包，但不发布自定义基座到 HBuidlerX 下
+uapp run build:dev --no-copy
+
+# 编译 android release apk
+uapp run build
 
 # 运行自定义打包发布流程，配置见 manifest.json => custom.command
 uapp run custom

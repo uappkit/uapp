@@ -28,7 +28,7 @@ uapp 通用命令🔥
   - 核心命令: 读取 manifest.json 配置, 并更新 android 或 ios 工程
     uapp manifest path/to/manifest.json
 
-  - 更新 HBuilderX 生成的App图标和本地打包资源
+  - 更新打包用到的数据，包括版本信息, dcloudkey, App图标, 本地打包资源等
     uapp prepare
 
   - 编译并发布自定义基座到 HBuilderX 下
