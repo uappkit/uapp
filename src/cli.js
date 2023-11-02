@@ -748,6 +748,11 @@ function buildWebApp() {
     }
   }
 
+  if (!fs.existsSync(hbxDir)) {
+    console.log(chalk.yellow('uapp["hbx.dir"] 配置路径有错误'));
+    process.exit(-1);
+  }
+
   let buildOutDir = path.join(webAppDir, 'unpackage/resources/' + manifest.appid + '/www');
   let node = path.join(hbxDir, 'plugins/node/node');
   let vite = path.join(hbxDir, 'plugins/uniapp-cli-vite/node_modules/@dcloudio/vite-plugin-uni/bin/uni.js');
@@ -759,12 +764,11 @@ function buildWebApp() {
   process.env.HX_APP_ROOT = hbxDir;
   process.env.UNI_INPUT_DIR = webAppDir;
   process.env.UNI_OUTPUT_DIR = buildOutDir;
-  let command = `${node} ${vite} -p app-${projectType} build`;
 
   const spinner = ora();
   try {
     spinner.start();
-    require('child_process').execSync(command, { stdio: 'inherit' });
+    require('child_process').spawnSync(node, [vite, '-p', `app-${projectType}`, 'build'], { stdio: 'inherit' });
     spinner.succeed('webapp 编译完成\n');
   } catch (e) {
     spinner.fail('webapp 打包环境有问题，忽略并跳过 webapp 编译\n');
