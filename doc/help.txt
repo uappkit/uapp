@@ -16,12 +16,8 @@ uapp 通用命令🔥
 
   - 新建一个基于 uniapp-cli 的工程，默认使用 vite vue3
     uapp new ${projectName}
-
-    // 用 alpha 模版，并使用 typescript
     uapp new ${projectName} --alpha --typescript
-
-    // 使用旧的 vue2 模版
-    uapp new ${projectName} --vue2
+    uapp new ${projectName} --vue2 (旧的 vue2 模版)
 
 需在工程模板下运行命令☘️
 
@@ -30,12 +26,11 @@ uapp 通用命令🔥
 
   - 更新打包用到的数据，包括版本信息, dcloudkey, App图标, 本地打包资源等
     uapp prepare
+    uapp prepare --no-webapp (不编译 webapp)
 
   - 编译并发布自定义基座到 HBuilderX 下
     uapp run build:dev
-
-  - 编译开发包，不发布
-    uapp run build:dev --no-copy
+    uapp run build:dev --no-copy  (不发布)
 
   - 编译 release 包
     // iOS 平台请直接使用 Xcode 发布

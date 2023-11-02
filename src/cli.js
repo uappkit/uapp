@@ -38,14 +38,16 @@ const shortHands = {
 const appDir = process.cwd();
 const sdkHomeDir = path.join(require('os').homedir(), '.uappsdk');
 let localLinkManifest = path.join(appDir, 'manifest.json');
+
+let args;
 let manifest = '';
 let webAppDir = '';
 let projectType = 'unknown';
 
 module.exports = function (inputArgs) {
   checkForUpdates();
+  args = nopt(knownOpts, shortHands, inputArgs);
 
-  const args = nopt(knownOpts, shortHands, inputArgs);
   if (args.version) {
     console.log('uapp 当前版本: ' + pkg.version);
     return;
@@ -165,6 +167,44 @@ module.exports = function (inputArgs) {
     return;
   }
 
+  // command:
+  // uapp manifest path/to/manifest.json
+  if (cmd === 'manifest') {
+    let manifestFile = args.argv.remain[1];
+    if (manifestFile && !fs.existsSync(manifestFile)) {
+      console.log('找不到: ' + manifestFile);
+      return;
+    }
+
+    if (manifestFile) {
+      localLinkManifest = path.join(appDir, '/manifest.json');
+      try {
+        let fstats = fs.lstatSync(localLinkManifest);
+        if (fstats.isSymbolicLink()) {
+          fs.unlinkSync(localLinkManifest);
+        } else {
+          let backupName = 'manifest-' + new Date().getTime() + '.json';
+          console.log('注意：将已存在 manifest.json 文件更名为: ' + backupName);
+          fs.renameSync(localLinkManifest, localLinkManifest.replace('manifest.json', backupName));
+        }
+      } catch (error) {}
+
+      fs.symlinkSync(manifestFile, localLinkManifest);
+    }
+
+    if (!fs.existsSync(localLinkManifest)) {
+      console.log('找不到 manifest.json 文件，可参照下面命令: ');
+      console.log('uapp manifest path/to/manifest.json');
+      return;
+    }
+
+    loadManifest();
+    printManifestInfo();
+    return;
+  }
+
+  loadManifest();
+
   // command: uapp info, uapp info jwt, uapp info key
   if (cmd === 'info' && (!args.argv.remain[1] || args.argv.remain[1] === 'jwt' || args.argv.remain[1] === 'key')) {
     printManifestInfo();
@@ -200,7 +240,6 @@ module.exports = function (inputArgs) {
 
   // command: uapp run custom
   if (cmd === 'run' && args.argv.remain[1] === 'custom') {
-    manifest = getManifest();
     let command = manifest.uapp[`${projectType}.custom.command`] || manifest.uapp['custom.command'];
     if (!command) {
       console.log('自定义命令为空，请参照文档中的 custom.command 配置');
@@ -215,12 +254,6 @@ module.exports = function (inputArgs) {
   // uapp run build
   // uapp run build:dev { --no-copy | 不复制到 hbx 自定义基座 }
   if (cmd === 'run' && (args.argv.remain[1] === 'build' || args.argv.remain[1] === 'build:dev')) {
-    getManifest();
-
-    if (args.webapp) {
-      buildWebApp();
-    }
-
     if (args.prepare) {
       prepareCommand();
     }
@@ -286,42 +319,6 @@ module.exports = function (inputArgs) {
     }
 
     console.log('无法识别的工程模板，请参考帮助');
-    return;
-  }
-
-  // command:
-  // uapp manifest path/to/manifest.json
-  if (cmd === 'manifest') {
-    let manifestFile = args.argv.remain[1];
-    if (manifestFile && !fs.existsSync(manifestFile)) {
-      console.log('找不到: ' + manifestFile);
-      return;
-    }
-
-    if (manifestFile) {
-      localLinkManifest = path.join(appDir, '/manifest.json');
-      try {
-        let fstats = fs.lstatSync(localLinkManifest);
-        if (fstats.isSymbolicLink()) {
-          fs.unlinkSync(localLinkManifest);
-        } else {
-          let backupName = 'manifest-' + new Date().getTime() + '.json';
-          console.log('注意：将已存在 manifest.json 文件更名为: ' + backupName);
-          fs.renameSync(localLinkManifest, localLinkManifest.replace('manifest.json', backupName));
-        }
-      } catch (error) {}
-
-      fs.symlinkSync(manifestFile, localLinkManifest);
-    }
-
-    if (!fs.existsSync(localLinkManifest)) {
-      console.log('找不到 manifest.json 文件，可参照下面命令: ');
-      console.log('uapp manifest path/to/manifest.json');
-      return;
-    }
-
-    console.log('当前使用 manifest: ' + (manifestFile || localLinkManifest));
-    printManifestInfo();
     return;
   }
 
@@ -399,8 +396,9 @@ function checkManifest() {
   }
 }
 
-function getManifest() {
+function loadManifest() {
   checkManifest();
+  console.log('当前使用 manifest: ' + localLinkManifest);
 
   if (fs.existsSync(localLinkManifest)) {
     let content = fs.readFileSync(localLinkManifest, 'utf8');
@@ -438,7 +436,10 @@ function getManifest() {
 }
 
 function prepareCommand() {
-  manifest = getManifest();
+  if (args.webapp) {
+    buildWebApp();
+  }
+
   let compiledDir = path.join(webAppDir, 'unpackage/resources/', manifest.appid);
   if (!pathExistsSync(compiledDir)) {
     console.log(chalk.red('找不到本地App打包资源'));
@@ -469,8 +470,8 @@ function prepareCommand() {
 
   fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
   fs.mkdirSync(embedAppsDir, { recursive: true });
-  sync(compiledDir, embedAppsDir, { delete: true });
-  console.log(chalk.green('打包APP资源已就绪'));
+  sync(compiledDir, embedAppsDir);
+  console.log(chalk.green('APP打包所需资源已更新'));
 }
 
 /*
@@ -647,8 +648,6 @@ function updateIOSIcons(resDir) {
 }
 
 function printManifestInfo() {
-  let manifest = getManifest();
-
   console.log();
   console.log('- appid       : ' + manifest.appid);
   console.log('- appName     : ' + manifest.uapp.name);
@@ -712,8 +711,6 @@ function printJWTToken() {
 }
 
 function printAndroidKeyInfo(gradle) {
-  manifest = getManifest();
-
   let output = require('child_process').execSync(gradle + ' app:signingReport').toString();
   let r;
   if (output.indexOf('Invalid keystore format') > 0) {
@@ -739,31 +736,38 @@ function printAndroidKeyInfo(gradle) {
 }
 
 function buildWebApp() {
-  let isWindows = require('os').type() === 'Windows_NT';
-  let cli = isWindows ? 'cli.exe' : 'cli';
-
-  let hbxCli = '/Applications/HBuilderX.app/Contents/MacOS/cli';
-  if (!isWindows && fs.existsSync(hbxCli)) {
-    cli = hbxCli;
+  let osType = require('os').type();
+  let hbxDir = manifest.uapp['hbx.dir'];
+  if (!hbxDir) {
+    if (osType === 'Windows_NT') {
+      return console.log('windows 下需通过配置 manifest.uapp[\'hbx.dir\'] 指定 HBuilderX 安装目录');
+    } else if (osType === 'Darwin') {
+      hbxDir = '/Applications/HBuilderX.app/Contents/HBuilderX';
+    } else {
+      return console.log(`无法编译 webapp, 暂不支持系统类型 ${osType}`);
+    }
   }
 
-  let command = cli + ` publish --platform APP --type appResource --project "${webAppDir}"`;
+  let buildOutDir = path.join(webAppDir, 'unpackage/resources/' + manifest.appid + '/www');
+  let node = path.join(hbxDir, 'plugins/node/node');
+  let vite = path.join(hbxDir, 'plugins/uniapp-cli-vite/node_modules/@dcloudio/vite-plugin-uni/bin/uni.js');
+  if (!fs.existsSync(vite)) {
+    console.log(chalk.yellow('HBuilderX 需要安装插件 => uni-app (vue3) 编译器'));
+    process.exit(-1);
+  }
+
+  process.env.HX_APP_ROOT = hbxDir;
+  process.env.UNI_INPUT_DIR = webAppDir;
+  process.env.UNI_OUTPUT_DIR = buildOutDir;
+  let command = `${node} ${vite} -p app-${projectType} build`;
+
+  const spinner = ora();
   try {
-    console.log(chalk.yellow('请确定 HBuilderX 已打开，并且已导入工程，否则会导致 webapp 未编译'));
-    require('child_process').execSync(cli + ' open', { stdio: 'inherit' });
+    spinner.start();
     require('child_process').execSync(command, { stdio: 'inherit' });
+    spinner.succeed('webapp 编译完成\n');
   } catch (e) {
-    console.log();
-    console.log('请确定配置过 cli 环境变量，参考如下文档:');
-    console.log('👉 https://hx.dcloud.net.cn/cli/env\n');
-    process.exit(-1);
-  }
-
-  // cli 内部发生错误
-  let compiledDir = path.join(webAppDir, 'unpackage/resources/', manifest.appid);
-  if (!pathExistsSync(compiledDir)) {
-    console.log(chalk.red('webapp 打包失败，请通过 HBuilderX 控制台查看具体原因'));
-    process.exit(-1);
+    spinner.fail('webapp 打包环境有问题，忽略并跳过 webapp 编译\n');
   }
 }
 
