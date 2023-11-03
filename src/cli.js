@@ -736,15 +736,15 @@ function printAndroidKeyInfo(gradle) {
 }
 
 function buildWebApp() {
-  let osType = require('os').type();
+  let platform = process.platform;
   let hbxDir = manifest.uapp['hbx.dir'];
   if (!hbxDir) {
-    if (osType === 'Windows_NT') {
+    if (platform === 'win32') {
       return console.log('windows 下需通过配置 manifest.uapp[\'hbx.dir\'] 指定 HBuilderX 安装目录');
-    } else if (osType === 'Darwin') {
+    } else if (platform === 'darwin') {
       hbxDir = '/Applications/HBuilderX.app/Contents/HBuilderX';
     } else {
-      return console.log(`无法编译 webapp, 暂不支持系统类型 ${osType}`);
+      return console.log(`无法编译 webapp, 暂不支持系统 ${platform}`);
     }
   }
 

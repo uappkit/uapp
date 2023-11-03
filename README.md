@@ -30,11 +30,11 @@ uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, 
 
 **Android Build**
 
-![android build](https://mixcut.b0.v56.fun/uapp/android_build.gif)
+![android build](https://mixcut.b0.v56.fun/uapp/android_build.gif?t=1698997415)
 
 **iOS Build**
 
-![ios build](https://mixcut.b0.v56.fun/uapp/ios_build.gif)
+![ios build](https://mixcut.b0.v56.fun/uapp/ios_build.gif?t=1698997415)
 
 ## 一、先安装 uappsdk
 
@@ -197,7 +197,7 @@ uapp run custom
     "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
     "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",
     "hbx.dir": "/Applications/HBuilderX.app/Contents/HBuilderX",
-    "custom.command": "cd ${SRC}/../ && npm run build:app && cd - && uapp prepare && uapp run build:dev"
+    "custom.command": "cd ${SRC}/../ && npm run build:app && cd - && uapp run build"
   },
   "app-plus": {
     "distribute": {
