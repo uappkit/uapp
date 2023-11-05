@@ -12,6 +12,7 @@ const fs = require('fs');
 const ora = require('ora');
 
 const path = require('path');
+const { execSync, spawnSync } = require('child_process');
 const tiged = require('tiged');
 const chalk = require('chalk');
 const pkg = require('../package.json');
@@ -90,7 +91,7 @@ module.exports = function (inputArgs) {
           ? 'vue create -p dcloudio/uni-preset-vue#alpha '
           : 'vue create -p dcloudio/uni-preset-vue ';
         try {
-          require('child_process').execSync(baseCommand + projectName.toLowerCase(), { stdio: 'inherit' });
+          execSync(baseCommand + projectName.toLowerCase(), { stdio: 'inherit' });
         } catch (error) {
           console.log('请先安装 vue 环境:');
           console.log('npm i -g @vue/cli');
@@ -158,7 +159,7 @@ module.exports = function (inputArgs) {
     try {
       let keyCommand =
         'keytool -genkey -alias key0 -keyalg RSA -keysize 2048 -validity 36500 -dname "CN=uapp" -keystore ' + keyFile;
-      require('child_process').execSync(keyCommand, { stdio: 'inherit' });
+      execSync(keyCommand, { stdio: 'inherit' });
       console.log('\n证书生成位置: ' + keyFile);
     } catch (error) {
       console.log('\n错误解决方法, 改名已存在的文件: ' + keyFile);
@@ -245,7 +246,7 @@ module.exports = function (inputArgs) {
       console.log('自定义命令为空，请参照文档中的 custom.command 配置');
     } else {
       command = command.replace(/\$\{SRC\}/g, webAppDir);
-      require('child_process').execSync(command, { stdio: 'inherit' });
+      execSync(command, { stdio: 'inherit' });
     }
     return;
   }
@@ -271,7 +272,7 @@ module.exports = function (inputArgs) {
       };
 
       let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
-      require('child_process').execSync(gradle + ` ${assembleTypeMap[buildType]}`, { stdio: 'inherit' });
+      execSync(gradle + ` ${assembleTypeMap[buildType]}`, { stdio: 'inherit' });
       let buildOutFile = path.join(appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
 
       if (buildType === 'build:dev' && args.copy) {
@@ -290,7 +291,7 @@ module.exports = function (inputArgs) {
       }
 
       try {
-        require('child_process').execSync('xcodegen', { stdio: 'inherit' });
+        execSync('xcodegen', { stdio: 'inherit' });
       } catch (e) {
         console.log('请先安装 xcodegen, 可通过 brew install xcodegen 安装, 参考 iOS 配置文档: ');
         console.log('👉 https://gitee.com/uappkit/platform/blob/main/ios/README.md');
@@ -298,13 +299,13 @@ module.exports = function (inputArgs) {
       }
 
       // gererate uapp_debug.xcarchive
-      require('child_process').execSync(
+      execSync(
         'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive',
         { stdio: 'inherit' }
       );
 
       // generate ipa
-      require('child_process').execSync(
+      execSync(
         'xcodebuild -exportArchive -archivePath out/uapp_debug.xcarchive -exportPath out -exportOptionsPlist config/export.plist',
         { stdio: 'inherit' }
       );
@@ -711,14 +712,14 @@ function printJWTToken() {
 }
 
 function printAndroidKeyInfo(gradle) {
-  let output = require('child_process').execSync(gradle + ' app:signingReport').toString();
+  let output = execSync(gradle + ' app:signingReport').toString();
   let r;
   if (output.indexOf('Invalid keystore format') > 0) {
     r = output.match(/Error: ([\s\S]+?)\n----------/);
     console.log('签名文件错误: ' + r[1]);
     console.log('问题可能因为创建 app.keystore 时使用的java版本和当前不一致，可更换java版本后再尝试');
     console.log('\n------ 当前java版本 ------');
-    return require('child_process').execSync('java -version', { stdio: 'inherit' });
+    return execSync('java -version', { stdio: 'inherit' });
   }
 
   r = output.match(/Variant: release[\s\S]+?----------/);
@@ -768,7 +769,7 @@ function buildWebApp() {
   const spinner = ora();
   try {
     spinner.start();
-    require('child_process').spawnSync(node, [vite, '-p', `app-${projectType}`, 'build'], { stdio: 'inherit' });
+    spawnSync(node, [vite, '-p', `app-${projectType}`, 'build'], { stdio: 'inherit' });
     spinner.succeed('webapp 编译完成\n');
   } catch (e) {
     spinner.fail('webapp 打包环境有问题，忽略并跳过 webapp 编译\n');
