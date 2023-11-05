@@ -36,18 +36,19 @@ const shortHands = {
   h: '--help'
 };
 
-const appDir = process.cwd();
-const sdkHomeDir = path.join(require('os').homedir(), '.uappsdk');
-let localLinkManifest = path.join(appDir, 'manifest.json');
-
-let args;
-let manifest = '';
-let webAppDir = '';
-let projectType = 'unknown';
+let $G = {
+  args: {},
+  appDir: process.cwd(),
+  sdkHomeDir: path.join(require('os').homedir(), '.uappsdk'),
+  localLinkManifest: path.join(process.cwd(), 'manifest.json'),
+  manifest: {},
+  webAppDir: '',
+  projectType: 'unknown'
+};
 
 module.exports = function (inputArgs) {
   checkForUpdates();
-  args = nopt(knownOpts, shortHands, inputArgs);
+  let args = $G.args = nopt(knownOpts, shortHands, inputArgs);
 
   if (args.version) {
     console.log('uapp 当前版本: ' + pkg.version);
@@ -74,10 +75,10 @@ module.exports = function (inputArgs) {
   }
 
   // 如果当面目录不存在 manifest.json，尝试使用 ../src/manifest.json
-  if (!fs.existsSync(localLinkManifest)) {
-    let tryManifestFile = path.resolve(path.join(appDir, '../src/manifest.json'));
+  if (!fs.existsSync($G.localLinkManifest)) {
+    let tryManifestFile = path.resolve(path.join($G.appDir, '../src/manifest.json'));
     if (fs.existsSync(tryManifestFile)) {
-      localLinkManifest = tryManifestFile;
+      $G.localLinkManifest = tryManifestFile;
     }
   }
 
@@ -110,7 +111,7 @@ module.exports = function (inputArgs) {
 
   // command: uapp sdk init
   if (cmd === 'sdk' && args.argv.remain[1] === 'init') {
-    sync(path.resolve(__dirname, '../uappsdk'), sdkHomeDir, { delete: false });
+    sync(path.resolve(__dirname, '../uappsdk'), $G.sdkHomeDir, { delete: false });
     console.log(chalk.green('--- uappsdk 已安装 ---'));
     return;
   }
@@ -135,25 +136,25 @@ module.exports = function (inputArgs) {
   | * 下面命令需要限制在项目下运行
   |--------------------------------------------------------------------------
   */
-  if (fs.existsSync(path.join(appDir, 'Main/AppDelegate.m'))) {
-    projectType = 'ios';
-  } else if (fs.existsSync(path.join(appDir, '/app/build.gradle'))) {
-    projectType = 'android';
+  if (fs.existsSync(path.join($G.appDir, 'Main/AppDelegate.m'))) {
+    $G.projectType = 'ios';
+  } else if (fs.existsSync(path.join($G.appDir, '/app/build.gradle'))) {
+    $G.projectType = 'android';
   }
 
-  if (projectType === 'unknown') {
+  if ($G.projectType === 'unknown') {
     return console.log('无法确定项目类型，请在android或ios工程下运行命令');
   }
 
   // command: uapp keygen
   if (cmd === 'keygen') {
-    if (projectType === 'android') {
+    if ($G.projectType === 'android') {
       console.log('注意: ');
       console.log('build.gradle 中密码默认为 123456, 如有修改为其他密码，请对应修改 build.gradle 中的配置');
     }
     console.log('需要输入两次6位密码, 例如输入密码: 123456\n');
 
-    let keyFile = path.join(appDir, 'app/app.keystore');
+    let keyFile = path.join($G.appDir, 'app/app.keystore');
     fs.mkdirSync(path.dirname(keyFile), { recursive: true });
 
     try {
@@ -178,22 +179,22 @@ module.exports = function (inputArgs) {
     }
 
     if (manifestFile) {
-      localLinkManifest = path.join(appDir, '/manifest.json');
+      $G.localLinkManifest = path.join($G.appDir, '/manifest.json');
       try {
-        let fstats = fs.lstatSync(localLinkManifest);
+        let fstats = fs.lstatSync($G.localLinkManifest);
         if (fstats.isSymbolicLink()) {
-          fs.unlinkSync(localLinkManifest);
+          fs.unlinkSync($G.localLinkManifest);
         } else {
           let backupName = 'manifest-' + new Date().getTime() + '.json';
           console.log('注意：将已存在 manifest.json 文件更名为: ' + backupName);
-          fs.renameSync(localLinkManifest, localLinkManifest.replace('manifest.json', backupName));
+          fs.renameSync($G.localLinkManifest, $G.localLinkManifest.replace('manifest.json', backupName));
         }
       } catch (error) {}
 
-      fs.symlinkSync(manifestFile, localLinkManifest);
+      fs.symlinkSync(manifestFile, $G.localLinkManifest);
     }
 
-    if (!fs.existsSync(localLinkManifest)) {
+    if (!fs.existsSync($G.localLinkManifest)) {
       console.log('找不到 manifest.json 文件，可参照下面命令: ');
       console.log('uapp manifest path/to/manifest.json');
       return;
@@ -210,13 +211,13 @@ module.exports = function (inputArgs) {
   if (cmd === 'info' && (!args.argv.remain[1] || args.argv.remain[1] === 'jwt' || args.argv.remain[1] === 'key')) {
     printManifestInfo();
 
-    if ((projectType === 'ios' && !args.argv.remain[1]) || args.argv.remain[1] === 'jwt') {
+    if (($G.projectType === 'ios' && !args.argv.remain[1]) || args.argv.remain[1] === 'jwt') {
       printJWTToken();
       return;
     }
 
-    if (projectType === 'android') {
-      let keyFile = path.join(appDir, 'app/app.keystore');
+    if ($G.projectType === 'android') {
+      let keyFile = path.join($G.appDir, 'app/app.keystore');
       if (!fs.existsSync(keyFile)) {
         console.log('找不到 keystore 签名文件: ' + keyFile);
         return;
@@ -241,11 +242,11 @@ module.exports = function (inputArgs) {
 
   // command: uapp run custom
   if (cmd === 'run' && args.argv.remain[1] === 'custom') {
-    let command = manifest.uapp[`${projectType}.custom.command`] || manifest.uapp['custom.command'];
+    let command = $G.manifest.uapp[`${$G.projectType}.custom.command`] || $G.manifest.uapp['custom.command'];
     if (!command) {
       console.log('自定义命令为空，请参照文档中的 custom.command 配置');
     } else {
-      command = command.replace(/\$\{SRC\}/g, webAppDir);
+      command = command.replace(/\$\{SRC\}/g, $G.webAppDir);
       execSync(command, { stdio: 'inherit' });
     }
     return;
@@ -260,7 +261,7 @@ module.exports = function (inputArgs) {
     }
 
     let buildType = args.argv.remain[1];
-    if (projectType === 'android') {
+    if ($G.projectType === 'android') {
       let assembleTypeMap = {
         'build': 'assembleRelease',
         'build:dev': 'assembleDebug'
@@ -271,12 +272,12 @@ module.exports = function (inputArgs) {
         'build:dev': 'debug/app-debug.apk'
       };
 
-      let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
+      let gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
       execSync(gradle + ` ${assembleTypeMap[buildType]}`, { stdio: 'inherit' });
-      let buildOutFile = path.join(appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
+      let buildOutFile = path.join($G.appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
 
       if (buildType === 'build:dev' && args.copy) {
-        sync(buildOutFile, path.join(webAppDir, 'unpackage/debug/android_debug.apk'));
+        sync(buildOutFile, path.join($G.webAppDir, 'unpackage/debug/android_debug.apk'));
       }
 
       console.log('\n编译成功，安装包位置: ');
@@ -284,7 +285,7 @@ module.exports = function (inputArgs) {
       return;
     }
 
-    if (projectType === 'ios') {
+    if ($G.projectType === 'ios') {
       if (buildType !== 'build:dev') {
         console.log('iOS仅支持自定义基座打包`uapp run build:dev`，如正式版发布请直接使用 xcode');
         return;
@@ -312,8 +313,8 @@ module.exports = function (inputArgs) {
 
       if (args.copy) {
         sync(
-          path.join(appDir, 'out/HBuilder.ipa'),
-          path.join(webAppDir, 'unpackage/debug/ios_debug.ipa')
+          path.join($G.appDir, 'out/HBuilder.ipa'),
+          path.join($G.webAppDir, 'unpackage/debug/ios_debug.ipa')
         );
       }
       return;
@@ -391,7 +392,7 @@ function cleanEmptyFoldersRecursively(folder) {
 }
 
 function checkManifest() {
-  if (!fs.existsSync(localLinkManifest)) {
+  if (!fs.existsSync($G.localLinkManifest)) {
     console.log('请先执行 `uapp manifest path/to/manifest.json` 指定 manifest.json 文件');
     process.exit(-1);
   }
@@ -399,18 +400,18 @@ function checkManifest() {
 
 function loadManifest() {
   checkManifest();
-  console.log('当前使用 manifest: ' + localLinkManifest);
+  console.log('当前使用 manifest: ' + $G.localLinkManifest);
 
-  if (fs.existsSync(localLinkManifest)) {
-    let content = fs.readFileSync(localLinkManifest, 'utf8');
-    manifest = JSON.parse(stripJsonComments(content));
+  if (fs.existsSync($G.localLinkManifest)) {
+    let content = fs.readFileSync($G.localLinkManifest, 'utf8');
+    $G.manifest = JSON.parse(stripJsonComments(content));
   }
 
-  if (!manifest.appid) {
+  if (!$G.manifest.appid) {
     console.log(chalk.yellow('manifest.json 中缺少 appid，请打开 HBuilderX 获取'));
   }
 
-  if (!manifest.uapp) {
+  if (!$G.manifest.uapp) {
     console.log(chalk.yellow('manifest.json 中缺少 uapp 节点，请复制并添加如下内容'));
     console.log(`
 "uapp": {
@@ -423,38 +424,37 @@ function loadManifest() {
     process.exit(-1);
   }
 
-  webAppDir = path.dirname(fs.realpathSync(localLinkManifest));
+  $G.webAppDir = path.dirname(fs.realpathSync($G.localLinkManifest));
 
-  manifest.uapp.name = manifest.uapp[`${projectType}.name`] || manifest.uapp.name || manifest.name;
-  manifest.uapp.package = manifest.uapp[`${projectType}.package`] || manifest.uapp.package || '';
-  manifest.uapp.versionName = manifest.uapp[`${projectType}.versionName`] || manifest.versionName;
-  manifest.uapp.versionCode = manifest.uapp[`${projectType}.versionCode`] || manifest.versionCode;
-  manifest.uapp.appkey = manifest.uapp[`${projectType}.appkey`];
+  $G.manifest.uapp.name = $G.manifest.uapp[`${$G.projectType}.name`] || $G.manifest.uapp.name || $G.manifest.name;
+  $G.manifest.uapp.package = $G.manifest.uapp[`${$G.projectType}.package`] || $G.manifest.uapp.package || '';
+  $G.manifest.uapp.versionName = $G.manifest.uapp[`${$G.projectType}.versionName`] || $G.manifest.versionName;
+  $G.manifest.uapp.versionCode = $G.manifest.uapp[`${$G.projectType}.versionCode`] || $G.manifest.versionCode;
+  $G.manifest.uapp.appkey = $G.manifest.uapp[`${$G.projectType}.appkey`];
 
   // 缺失的参数，默认使用模版里的
-  manifest = _.merge(require(sdkHomeDir + '/templates/manifest.json'), manifest);
-  return manifest;
+  $G.manifest = _.merge(require($G.sdkHomeDir + '/templates/manifest.json'), $G.manifest);
 }
 
 function prepareCommand() {
-  if (args.webapp) {
+  if ($G.args.webapp) {
     buildWebApp();
   }
 
-  let compiledDir = path.join(webAppDir, 'unpackage/resources/', manifest.appid);
+  let compiledDir = path.join($G.webAppDir, 'unpackage/resources/', $G.manifest.appid);
   if (!pathExistsSync(compiledDir)) {
     console.log(chalk.red('找不到本地App打包资源'));
     console.log('请使用 HBuilderX => 发行(菜单) => 原生App本地打包 => 生成本地打包App资源');
     process.exit(-1);
   }
 
-  let resDir = path.join(webAppDir, 'unpackage/res/icons');
+  let resDir = path.join($G.webAppDir, 'unpackage/res/icons');
   // 如果没生成过图标目录, 跳过
   if (pathExistsSync(resDir)) {
-    if (projectType === 'android') {
+    if ($G.projectType === 'android') {
       updateAndroidMetaData();
       updateAndroidIcons(resDir);
-    } else if (projectType === 'ios') {
+    } else if ($G.projectType === 'ios') {
       updateIOSMetaData();
       updateIOSIcons(resDir);
     }
@@ -464,9 +464,9 @@ function prepareCommand() {
   }
 
   let embedAppsDir = path.join(
-    appDir,
-    projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
-    manifest.appid
+    $G.appDir,
+    $G.projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
+    $G.manifest.appid
   );
 
   fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
@@ -483,27 +483,27 @@ function updateAndroidMetaData() {
   let wxEntryActivityFile = 'WXEntryActivity.java';
   let wXPayEntryActivityFile = 'WXPayEntryActivity.java';
 
-  let baseGradleFile = path.join(appDir, 'app/build.gradle');
+  let baseGradleFile = path.join($G.appDir, 'app/build.gradle');
   let content = fs.readFileSync(baseGradleFile, 'utf-8');
 
-  content = content.replace(/(applicationId\s+")(.*)(")/, '$1' + manifest.uapp.package + '$3');
-  content = content.replace(/(app_name[',\s]+")(.*)(")/, '$1' + manifest.uapp.name + '$3');
-  content = content.replace(/(versionCode\s+)(.*)/, '$1' + manifest.uapp.versionCode);
-  content = content.replace(/(versionName\s+")(.*)(")/, '$1' + manifest.uapp.versionName + '$3');
-  content = content.replace(/("DCLOUD_APPKEY"\s+:\s+")(.*)(",)/, '$1' + manifest.uapp.appkey + '$3');
+  content = content.replace(/(applicationId\s+")(.*)(")/, '$1' + $G.manifest.uapp.package + '$3');
+  content = content.replace(/(app_name[',\s]+")(.*)(")/, '$1' + $G.manifest.uapp.name + '$3');
+  content = content.replace(/(versionCode\s+)(.*)/, '$1' + $G.manifest.uapp.versionCode);
+  content = content.replace(/(versionName\s+")(.*)(")/, '$1' + $G.manifest.uapp.versionName + '$3');
+  content = content.replace(/("DCLOUD_APPKEY"\s+:\s+")(.*)(",)/, '$1' + $G.manifest.uapp.appkey + '$3');
 
   content = content.replace(
     /("WX_APPID"\s+:\s+")(.*)(",)/,
-    '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3'
+    '$1' + $G.manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3'
   );
 
   content = content.replace(
     /("WX_SECRET"\s+:\s+")(.*)(",)/,
-    '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret + '$3'
+    '$1' + $G.manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret + '$3'
   );
   fs.writeFileSync(baseGradleFile, content);
 
-  let sourceDir = path.join(appDir, 'app/src/main/java/');
+  let sourceDir = path.join($G.appDir, 'app/src/main/java/');
   for (const entryFile of [wxEntryActivityFile, wXPayEntryActivityFile]) {
     getFiles(sourceDir).forEach((file) => {
       file.endsWith(entryFile) && fs.unlinkSync(file);
@@ -515,12 +515,12 @@ function updateAndroidMetaData() {
 
   // DONT change content here
   let contentOfEntryFiles = {
-    [wxEntryActivityFile]: `package ${manifest.uapp.package}.wxapi;
+    [wxEntryActivityFile]: `package ${$G.manifest.uapp.package}.wxapi;
 import io.dcloud.feature.oauth.weixin.AbsWXCallbackActivity;
 public class WXEntryActivity extends AbsWXCallbackActivity {
 }
 `,
-    [wXPayEntryActivityFile]: `package ${manifest.uapp.package}.wxapi;
+    [wXPayEntryActivityFile]: `package ${$G.manifest.uapp.package}.wxapi;
 import io.dcloud.feature.payment.weixin.AbsWXPayCallbackActivity;
 public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
 }
@@ -529,9 +529,9 @@ public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
 
   for (const entryFile of [wxEntryActivityFile, wXPayEntryActivityFile]) {
     let replaceFile = path.join(
-      appDir,
+      $G.appDir,
       'app/src/main/java/',
-      manifest.uapp.package.replace(/\./g, '/'),
+      $G.manifest.uapp.package.replace(/\./g, '/'),
       'wxapi',
       entryFile
     );
@@ -540,8 +540,8 @@ public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
     fs.writeFileSync(replaceFile, contentOfEntryFiles[entryFile]);
   }
 
-  replaceControlXml(path.join(appDir, 'app/src/debug/assets/data/dcloud_control.xml'));
-  replaceControlXml(path.join(appDir, 'app/src/main/assets/data/dcloud_control.xml'));
+  replaceControlXml(path.join($G.appDir, 'app/src/debug/assets/data/dcloud_control.xml'));
+  replaceControlXml(path.join($G.appDir, 'app/src/main/assets/data/dcloud_control.xml'));
 
   console.log('✅ updateAndroidMetaData');
 }
@@ -549,7 +549,7 @@ public class WXPayEntryActivity extends AbsWXPayCallbackActivity{
 function updateAndroidIcons(resDir) {
   sync(
     path.join(resDir, '144x144.png'),
-    path.join(appDir, 'app/src/main/res/drawable-xxhdpi/icon.png')
+    path.join($G.appDir, 'app/src/main/res/drawable-xxhdpi/icon.png')
   );
   console.log('✅ updateAndroidIcons');
 }
@@ -559,31 +559,31 @@ function updateAndroidIcons(resDir) {
  */
 
 function updateIOSMetaData() {
-  let baseYamlFile = path.join(appDir, 'config/base.yml');
+  let baseYamlFile = path.join($G.appDir, 'config/base.yml');
   let content = fs.readFileSync(baseYamlFile, 'utf-8');
 
-  content = content.replace(/(PRODUCT_BUNDLE_IDENTIFIER: )(.*)/, '$1' + manifest.uapp.package);
-  content = content.replace(/(MARKETING_VERSION: )(.*)/g, '$1' + manifest.uapp.versionName);
-  content = content.replace(/(CURRENT_PROJECT_VERSION: )(.*)/g, '$1' + manifest.uapp.versionCode);
+  content = content.replace(/(PRODUCT_BUNDLE_IDENTIFIER: )(.*)/, '$1' + $G.manifest.uapp.package);
+  content = content.replace(/(MARKETING_VERSION: )(.*)/g, '$1' + $G.manifest.uapp.versionName);
+  content = content.replace(/(CURRENT_PROJECT_VERSION: )(.*)/g, '$1' + $G.manifest.uapp.versionCode);
   fs.writeFileSync(baseYamlFile, content);
 
-  replaceStoryboard(path.join(appDir, 'Main/Resources/LaunchScreen.storyboard'));
-  replaceStoryboard(path.join(appDir, 'Main/Resources/LaunchScreenAD.storyboard'));
+  replaceStoryboard(path.join($G.appDir, 'Main/Resources/LaunchScreen.storyboard'));
+  replaceStoryboard(path.join($G.appDir, 'Main/Resources/LaunchScreenAD.storyboard'));
 
-  replaceInfoPlist(path.join(appDir, 'Main/Resources/AppDev/Info.plist'));
-  replaceInfoPlist(path.join(appDir, 'Main/Resources/AppRelease/Info.plist'));
+  replaceInfoPlist(path.join($G.appDir, 'Main/Resources/AppDev/Info.plist'));
+  replaceInfoPlist(path.join($G.appDir, 'Main/Resources/AppRelease/Info.plist'));
 
-  replaceControlXml(path.join(appDir, 'Main/Resources/AppDev/control.xml'));
-  replaceControlXml(path.join(appDir, 'Main/Resources/AppRelease/control.xml'));
+  replaceControlXml(path.join($G.appDir, 'Main/Resources/AppDev/control.xml'));
+  replaceControlXml(path.join($G.appDir, 'Main/Resources/AppRelease/control.xml'));
 
-  let sdkLinkDir = path.join(appDir, '/SDKs/SDK');
+  let sdkLinkDir = path.join($G.appDir, '/SDKs/SDK');
   if (!fs.existsSync(sdkLinkDir)) {
-    let iosSDKDir = path.join(sdkHomeDir, '/ios/SDK');
+    let iosSDKDir = path.join($G.sdkHomeDir, '/ios/SDK');
     if (!fs.existsSync(iosSDKDir)) {
       console.log('找不到iOS SDK，请参照 README 配置');
       console.log('SDK 位置: ' + iosSDKDir);
     } else {
-      fs.symlinkSync(path.join(sdkHomeDir, '/ios/SDK'), sdkLinkDir, 'dir');
+      fs.symlinkSync(path.join($G.sdkHomeDir, '/ios/SDK'), sdkLinkDir, 'dir');
     }
   }
 
@@ -593,27 +593,28 @@ function updateIOSMetaData() {
 function replaceStoryboard(storyboardFile) {
   let content = fs.readFileSync(storyboardFile, 'utf-8');
   const re = /(text=")(.+?)(".+)(?=uapp-launchscreen-appname)/;
-  content = content.replace(re, '$1' + manifest.uapp.name + '$3');
+  content = content.replace(re, '$1' + $G.manifest.uapp.name + '$3');
   fs.writeFileSync(storyboardFile, content);
 }
 
 function replaceInfoPlist(plistFile) {
   let content = fs.readFileSync(plistFile, 'utf-8');
   let re = /(<key>dcloud_appkey<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
-  content = content.replace(re, '$1' + manifest.uapp.appkey + '$3');
+  content = content.replace(re, '$1' + $G.manifest.uapp.appkey + '$3');
 
   // replace ios and wexin meanwhile
   re = /(<key>UniversalLinks<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
-  content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.UniversalLinks + '$3');
+  content = content.replace(re,
+    '$1' + $G.manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.UniversalLinks + '$3');
 
   re = /(<key>weixin<\/key>[\s\S]+?appid<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
-  content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3');
+  content = content.replace(re, '$1' + $G.manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3');
 
   re = /(<string>weixin<\/string>\n.+?<key>CFBundleURLSchemes<\/key>[\s\S]+?<string>)(.*?)(<\/string>)/g;
-  content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3');
+  content = content.replace(re, '$1' + $G.manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appid + '$3');
 
   re = /(<key>weixin<\/key>[\s\S]+?appSecret<\/key>\n.+<string>)(.*?)(<\/string>)/g;
-  content = content.replace(re, '$1' + manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret + '$3');
+  content = content.replace(re, '$1' + $G.manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret + '$3');
 
   re = /(<key>CFBundleDisplayName<\/key>\n.+?<string>)(.*?)(<\/string>)/g;
   if (!re.test(content)) {
@@ -621,14 +622,14 @@ function replaceInfoPlist(plistFile) {
     process.exit(1);
   }
 
-  content = content.replace(re, '$1' + manifest.uapp.name + '$3');
+  content = content.replace(re, '$1' + $G.manifest.uapp.name + '$3');
   fs.writeFileSync(plistFile, content);
 }
 
 function replaceControlXml(xmlFile) {
   let content = fs.readFileSync(xmlFile, 'utf-8');
   let re = /(app appid=")(.+?)(")/g;
-  content = content.replace(re, '$1' + manifest.appid + '$3');
+  content = content.replace(re, '$1' + $G.manifest.appid + '$3');
   fs.writeFileSync(xmlFile, content);
 }
 
@@ -640,29 +641,29 @@ function updateIOSIcons(resDir) {
     if (['72x72.png', '96x96.png', '144x144.png', '192x192.png'].includes(file)) return;
 
     const fullPath = path.join(resDir, file);
-    sync(fullPath, path.join(appDir, '/Main/Resources/Images.xcassets/AppIcon.appiconset/', file), { delete: true });
+    sync(fullPath, path.join($G.appDir, '/Main/Resources/Images.xcassets/AppIcon.appiconset/', file), { delete: true });
   });
 
-  sync(path.join(resDir, '120x120.png'), path.join(appDir, 'Main/Resources/logo@2x.png'));
-  sync(path.join(resDir, '180x180.png'), path.join(appDir, 'Main/Resources/logo@3x.png'));
+  sync(path.join(resDir, '120x120.png'), path.join($G.appDir, 'Main/Resources/logo@2x.png'));
+  sync(path.join(resDir, '180x180.png'), path.join($G.appDir, 'Main/Resources/logo@3x.png'));
   console.log('✅ updateIOSIcons');
 }
 
 function printManifestInfo() {
   console.log();
-  console.log('- appid       : ' + manifest.appid);
-  console.log('- appName     : ' + manifest.uapp.name);
-  console.log('- package     : ' + manifest.uapp.package);
-  console.log('- versionName : ' + manifest.uapp.versionName);
-  console.log('- versionCode : ' + manifest.uapp.versionCode);
-  if (manifest.uapp.appkey) {
-    console.log('- appKey      : ' + manifest.uapp.appkey);
+  console.log('- appid       : ' + $G.manifest.appid);
+  console.log('- appName     : ' + $G.manifest.uapp.name);
+  console.log('- package     : ' + $G.manifest.uapp.package);
+  console.log('- versionName : ' + $G.manifest.uapp.versionName);
+  console.log('- versionCode : ' + $G.manifest.uapp.versionCode);
+  if ($G.manifest.uapp.appkey) {
+    console.log('- appKey      : ' + $G.manifest.uapp.appkey);
   }
 
   // for uniapp project
   console.log();
-  console.log(`👇 DCloud 开发者后台配置 dcloud_appkey (uapp.${projectType}.appkey): `);
-  console.log('https://dev.dcloud.net.cn/pages/app/detail/info?tab=package&appid=' + manifest.appid);
+  console.log(`👇 DCloud 开发者后台配置 dcloud_appkey (uapp.${$G.projectType}.appkey): `);
+  console.log('https://dev.dcloud.net.cn/pages/app/detail/info?tab=package&appid=' + $G.manifest.appid);
   console.log();
 }
 
@@ -670,10 +671,10 @@ function printManifestInfo() {
 function printJWTToken() {
   console.log('------ JWT Token ------');
   try {
-    let config = require(path.join(appDir, 'jwt/config.json'));
+    let config = require(path.join($G.appDir, 'jwt/config.json'));
 
     if (!config.team_id) {
-      let content = fs.readFileSync(path.join(appDir, 'config/custom.yml'), 'utf-8');
+      let content = fs.readFileSync(path.join($G.appDir, 'config/custom.yml'), 'utf-8');
       let r = content.match(/DEVELOPMENT_TEAM:\s+(.*)/);
       config.team_id = r[1] || '';
     }
@@ -682,7 +683,7 @@ function printJWTToken() {
       throw '请在 jwt/config.json 中设置 team_id';
     }
 
-    let privateKey = fs.readFileSync(path.join(appDir, 'jwt/key.txt'));
+    let privateKey = fs.readFileSync(path.join($G.appDir, 'jwt/key.txt'));
     let headers = { kid: config.key_id };
     let timestamp = Math.floor(Date.now() / 1000);
     let claims = {
@@ -738,7 +739,7 @@ function printAndroidKeyInfo(gradle) {
 
 function buildWebApp() {
   let platform = process.platform;
-  let hbxDir = manifest.uapp['hbx.dir'];
+  let hbxDir = $G.manifest.uapp['hbx.dir'];
   if (!hbxDir) {
     if (platform === 'win32') {
       return console.log('windows 下需通过配置 manifest.uapp[\'hbx.dir\'] 指定 HBuilderX 安装目录');
@@ -754,7 +755,7 @@ function buildWebApp() {
     process.exit(-1);
   }
 
-  let buildOutDir = path.join(webAppDir, 'unpackage/resources/' + manifest.appid + '/www');
+  let buildOutDir = path.join($G.webAppDir, 'unpackage/resources/' + $G.manifest.appid + '/www');
   let node = path.join(hbxDir, 'plugins/node/node');
   let vite = path.join(hbxDir, 'plugins/uniapp-cli-vite/node_modules/@dcloudio/vite-plugin-uni/bin/uni.js');
   if (!fs.existsSync(vite)) {
@@ -763,13 +764,13 @@ function buildWebApp() {
   }
 
   process.env.HX_APP_ROOT = hbxDir;
-  process.env.UNI_INPUT_DIR = webAppDir;
+  process.env.UNI_INPUT_DIR = $G.webAppDir;
   process.env.UNI_OUTPUT_DIR = buildOutDir;
 
   const spinner = ora();
   try {
     spinner.start();
-    spawnSync(node, [vite, '-p', `app-${projectType}`, 'build'], { stdio: 'inherit' });
+    spawnSync(node, [vite, '-p', `app-${$G.projectType}`, 'build'], { stdio: 'inherit' });
     spinner.succeed('webapp 编译完成\n');
   } catch (e) {
     spinner.fail('webapp 打包环境有问题，忽略并跳过 webapp 编译\n');
