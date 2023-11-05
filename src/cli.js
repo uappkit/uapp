@@ -74,6 +74,17 @@ module.exports = function (inputArgs) {
     return;
   }
 
+  if (cmd === 'config') {
+    let data = {};
+    let configFile = path.join($G.sdkHomeDir, 'config.json');
+    if (fs.existsSync(configFile)) {
+      data = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    }
+
+    data[args.argv.remain[1]] = args.argv.remain[2];
+    return fs.writeFileSync(path.join($G.sdkHomeDir, 'config.json'), JSON.stringify(data, null, 2));
+  }
+
   // 如果当面目录不存在 manifest.json，尝试使用 ../src/manifest.json
   if (!fs.existsSync($G.localLinkManifest)) {
     let tryManifestFile = path.resolve(path.join($G.appDir, '../src/manifest.json'));
