@@ -12,7 +12,7 @@ const fs = require('fs');
 const ora = require('ora');
 
 const path = require('path');
-const { execSync, spawnSync } = require('child_process');
+const { execSync, spawnSync, spawn } = require('child_process');
 const tiged = require('tiged');
 const chalk = require('chalk');
 const pkg = require('../package.json');
@@ -27,11 +27,14 @@ const knownOpts = {
   alpha: Boolean,
   vue2: Boolean,
   copy: Boolean,
+  open: Boolean,
   webapp: Boolean,
-  prepare: Boolean
+  prepare: Boolean,
+  out: [nopt.typeDefs.path, null]
 };
 
 const shortHands = {
+  o: '--out',
   v: '--version',
   h: '--help'
 };
@@ -43,7 +46,8 @@ let $G = {
   localLinkManifest: path.join(process.cwd(), 'manifest.json'),
   manifest: {},
   webAppDir: '',
-  projectType: 'unknown'
+  projectType: 'unknown',
+  config: {}
 };
 
 module.exports = function (inputArgs) {
@@ -74,15 +78,48 @@ module.exports = function (inputArgs) {
     return;
   }
 
-  if (cmd === 'config') {
-    let data = {};
-    let configFile = path.join($G.sdkHomeDir, 'config.json');
-    if (fs.existsSync(configFile)) {
-      data = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-    }
+  let configFile = path.join($G.sdkHomeDir, 'config.json');
+  if (fs.existsSync(configFile)) {
+    $G.config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+  }
 
-    data[args.argv.remain[1]] = args.argv.remain[2];
-    return fs.writeFileSync(path.join($G.sdkHomeDir, 'config.json'), JSON.stringify(data, null, 2));
+  if (!$G.config['hbx.dir'] && process.platform === 'darwin') {
+    $G.config['hbx.dir'] = '/Applications/HBuilderX.app';
+  }
+
+  if (!$G.config['wx.dir']) {
+    if (process.platform === 'darwin') {
+      let settingFile = path.join(require('os').homedir(), 'Library/Application Support/HBuilder X/user/settings.json');
+      if (fs.existsSync(settingFile)) {
+        $G.config['wx.dir'] = require(settingFile)['weApp.devTools.path'];
+      }
+
+      if (!$G['wx.dir']) {
+        $G.config['wx.dir'] = '/Applications/wechatwebdevtools.app';
+      }
+    } else if (process.platform === 'win32') {
+      let settingFile = path.join(require('os').homedir(), 'AppData/Roaming/HBuilder X/user/settings.json');
+      if (fs.existsSync(settingFile)) {
+        $G.config['wx.dir'] = require(settingFile)['weApp.devTools.path'];
+      }
+
+      if (!$G.config['wx.dir']) {
+        $G.config['wx.dir'] = 'C:\\Program Files (x86)\\Tencent\\微信web开发者工具';
+      }
+    }
+  }
+
+  if (cmd === 'config') {
+    $G.config[args.argv.remain[1]] = args.argv.remain[2];
+    return fs.writeFileSync(path.join($G.sdkHomeDir, 'config.json'), JSON.stringify($G.config, null, 2));
+  }
+
+  if (cmd === 'hbx') {
+    return runHBuilderXCli(args.argv.original.slice(1));
+  }
+
+  if (cmd === 'wx') {
+    return runWeixinCli(args.argv.original.slice(1));
   }
 
   // 如果当面目录不存在 manifest.json，尝试使用 ../src/manifest.json
@@ -93,31 +130,47 @@ module.exports = function (inputArgs) {
     }
   }
 
+  if (fs.existsSync(path.join($G.appDir, 'Main/AppDelegate.m'))) {
+    $G.projectType = 'ios';
+  } else if (fs.existsSync(path.join($G.appDir, '/app/build.gradle'))) {
+    $G.projectType = 'android';
+  } else if (fs.existsSync(path.join($G.appDir, 'pages.json')) && pathExistsSync(path.join($G.appDir, 'pages'))) {
+    $G.projectType = 'webapp';
+  } else if (
+    fs.existsSync(path.join($G.appDir, '/src/pages.json')) &&
+    pathExistsSync(path.join($G.appDir, '/src/pages'))
+  ) {
+    $G.projectType = 'webapp';
+    $G.localLinkManifest = path.join(process.cwd(), 'src/manifest.json');
+  }
+
   // command: uapp new
   if (cmd === 'new') {
     let projectName = args.argv.remain[1];
-    if (projectName) {
-      if (args.vue2) {
-        // vue2 必须使用小写
-        let baseCommand = args.alpha
-          ? 'vue create -p dcloudio/uni-preset-vue#alpha '
-          : 'vue create -p dcloudio/uni-preset-vue ';
-        try {
-          execSync(baseCommand + projectName.toLowerCase(), { stdio: 'inherit' });
-        } catch (error) {
-          console.log('请先安装 vue 环境:');
-          console.log('npm i -g @vue/cli');
-        }
-      } else {
-        let branch = args.alpha ? '#vite-alpha' : '#vite';
-        if (args.typescript) {
-          branch = '#vite-ts';
-        }
-
-        clone(`https://gitee.com/dcloud/uni-preset-vue.git${branch}`, projectName);
-      }
-      return;
+    if (!projectName) {
+      return console.log('缺少参数名，例如: uapp new project1');
     }
+
+    if (args.vue2) {
+      // vue2 必须使用小写
+      let baseCommand = args.alpha
+        ? 'vue create -p dcloudio/uni-preset-vue#alpha '
+        : 'vue create -p dcloudio/uni-preset-vue ';
+      try {
+        execSync(baseCommand + projectName.toLowerCase(), { stdio: 'inherit' });
+      } catch (error) {
+        console.log('请先安装 vue 环境:');
+        console.log('npm i -g @vue/cli');
+      }
+    } else {
+      let branch = args.alpha ? '#vite-alpha' : '#vite';
+      if (args.typescript) {
+        branch = '#vite-ts';
+      }
+
+      clone(`https://gitee.com/dcloud/uni-preset-vue.git${branch}`, projectName);
+    }
+    return;
   }
 
   // command: uapp sdk init
@@ -147,14 +200,15 @@ module.exports = function (inputArgs) {
   | * 下面命令需要限制在项目下运行
   |--------------------------------------------------------------------------
   */
-  if (fs.existsSync(path.join($G.appDir, 'Main/AppDelegate.m'))) {
-    $G.projectType = 'ios';
-  } else if (fs.existsSync(path.join($G.appDir, '/app/build.gradle'))) {
-    $G.projectType = 'android';
-  }
 
   if ($G.projectType === 'unknown') {
-    return console.log('无法确定项目类型，请在android或ios工程下运行命令');
+    console.log('无法确定项目类型，请在支持的项目中运行命令');
+    console.log('目前支持的项目类型有: webapp, android, ios');
+    return;
+  }
+
+  if ($G.projectType === 'webapp' && cmd !== 'run') {
+    return console.log('webapp 不支持命令 uapp ' + cmd);
   }
 
   // command: uapp keygen
@@ -206,8 +260,8 @@ module.exports = function (inputArgs) {
     }
 
     if (!fs.existsSync($G.localLinkManifest)) {
-      console.log('找不到 manifest.json 文件，可参照下面命令: ');
-      console.log('uapp manifest path/to/manifest.json');
+      console.log('文件不存在: ' + $G.localLinkManifest);
+      console.log('配置命令为: uapp manifest path/to/manifest.json');
       return;
     }
 
@@ -216,7 +270,9 @@ module.exports = function (inputArgs) {
     return;
   }
 
+  // 加载 manifest.json 数据
   loadManifest();
+  $G.webAppDir = path.dirname(fs.realpathSync($G.localLinkManifest));
 
   // command: uapp info, uapp info jwt, uapp info key
   if (cmd === 'info' && (!args.argv.remain[1] || args.argv.remain[1] === 'jwt' || args.argv.remain[1] === 'key')) {
@@ -234,7 +290,7 @@ module.exports = function (inputArgs) {
         return;
       }
 
-      let gradle = require('os').type() === 'Windows_NT' ? 'gradlew.bat' : './gradlew';
+      let gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
       if (!fs.existsSync(path.resolve(gradle))) {
         console.log('找不到 gradle 命令: ' + gradle);
         return;
@@ -264,9 +320,27 @@ module.exports = function (inputArgs) {
   }
 
   // commands:
+  // 先判断 projectType, webapp, android, ios
+  // webapp 时支持: uapp run dev:xxx , uapp run build:xxx
   // uapp run build
   // uapp run build:dev { --no-copy | 不复制到 hbx 自定义基座 }
-  if (cmd === 'run' && (args.argv.remain[1] === 'build' || args.argv.remain[1] === 'build:dev')) {
+  if (cmd === 'run') {
+    console.log('当前工程类型为 ' + chalk.yellow($G.projectType));
+
+    // webapp 支持 dev:xxx, build:xxx
+    if ($G.projectType === 'webapp') {
+      let [a, b] = args.argv.remain[1].split(':');
+      if (!['build', 'dev'].includes(a) || !b) {
+        return console.log('命令无效，webapp 仅支持 uapp run build:xxx / dev:xxx');
+      }
+
+      return buildWebApp(args.argv.remain[1]);
+    }
+
+    if (!['build', 'build:dev'].includes(args.argv.remain[1])) {
+      return console.log('命令无效，app 仅支持 uapp run build / build:dev');
+    }
+
     if (args.prepare) {
       prepareCommand();
     }
@@ -298,7 +372,7 @@ module.exports = function (inputArgs) {
 
     if ($G.projectType === 'ios') {
       if (buildType !== 'build:dev') {
-        console.log('iOS仅支持自定义基座打包`uapp run build:dev`，如正式版发布请直接使用 xcode');
+        console.log('iOS 仅支持自定义基座打包`uapp run build:dev`，如正式版发布请直接使用 xcode');
         return;
       }
 
@@ -405,11 +479,18 @@ function cleanEmptyFoldersRecursively(folder) {
 function checkManifest() {
   if (!fs.existsSync($G.localLinkManifest)) {
     console.log('请先执行 `uapp manifest path/to/manifest.json` 指定 manifest.json 文件');
-    process.exit(-1);
+    process.exit();
   }
 }
 
 function loadManifest() {
+  if (
+    !['android', 'ios'].includes($G.projectType) &&
+    ($G.args.argv.remain[0] === 'run' && !$G.args.argv.remain[1].includes(':app'))
+  ) {
+    return;
+  }
+
   checkManifest();
   console.log('当前使用 manifest: ' + $G.localLinkManifest);
 
@@ -432,10 +513,8 @@ function loadManifest() {
   "ios.appkey": "申请并替换为 ios dcloudkey"
 },
     `);
-    process.exit(-1);
+    process.exit();
   }
-
-  $G.webAppDir = path.dirname(fs.realpathSync($G.localLinkManifest));
 
   $G.manifest.uapp.name = $G.manifest.uapp[`${$G.projectType}.name`] || $G.manifest.uapp.name || $G.manifest.name;
   $G.manifest.uapp.package = $G.manifest.uapp[`${$G.projectType}.package`] || $G.manifest.uapp.package || '';
@@ -449,14 +528,14 @@ function loadManifest() {
 
 function prepareCommand() {
   if ($G.args.webapp) {
-    buildWebApp();
+    buildWebApp('build:app-' + $G.projectType);
   }
 
   let compiledDir = path.join($G.webAppDir, 'unpackage/resources/', $G.manifest.appid);
   if (!pathExistsSync(compiledDir)) {
     console.log(chalk.red('找不到本地App打包资源'));
     console.log('请使用 HBuilderX => 发行(菜单) => 原生App本地打包 => 生成本地打包App资源');
-    process.exit(-1);
+    process.exit();
   }
 
   let resDir = path.join($G.webAppDir, 'unpackage/res/icons');
@@ -748,44 +827,100 @@ function printAndroidKeyInfo(gradle) {
   console.log(r[0]);
 }
 
-function buildWebApp() {
+function buildWebApp(buildArg) {
   let platform = process.platform;
-  let hbxDir = $G.manifest.uapp['hbx.dir'];
-  if (!hbxDir) {
-    if (platform === 'win32') {
-      return console.log('windows 下需通过配置 manifest.uapp[\'hbx.dir\'] 指定 HBuilderX 安装目录');
-    } else if (platform === 'darwin') {
-      hbxDir = '/Applications/HBuilderX.app/Contents/HBuilderX';
-    } else {
-      return console.log(`无法编译 webapp, 暂不支持系统 ${platform}`);
-    }
+  if (!['win32', 'darwin'].includes(platform)) {
+    return console.log(`无法编译 webapp, 暂不支持系统 ${platform}`);
   }
 
+  let hbxDir = path.join($G.config['hbx.dir'], process.platform === 'darwin' ? 'Contents/HBuilderX' : '');
   if (!fs.existsSync(hbxDir)) {
-    console.log(chalk.yellow('uapp["hbx.dir"] 配置路径有错误'));
-    process.exit(-1);
+    console.log('文件不存在: ' + $G.config['hbx.dir']);
+    console.log('配置 HBuilderX 环境命令: ' + chalk.yellow('uapp config hbx.dir [path/to/HBuilderX]'));
+    process.exit();
   }
 
-  let buildOutDir = path.join($G.webAppDir, 'unpackage/resources/' + $G.manifest.appid + '/www');
   let node = path.join(hbxDir, 'plugins/node/node');
   let vite = path.join(hbxDir, 'plugins/uniapp-cli-vite/node_modules/@dcloudio/vite-plugin-uni/bin/uni.js');
   if (!fs.existsSync(vite)) {
     console.log(chalk.yellow('HBuilderX 需要安装插件 => uni-app (vue3) 编译器'));
-    process.exit(-1);
+    process.exit();
   }
 
+  let buildOutDir = $G.args.out;
+  if (!buildOutDir) {
+    buildOutDir = getDefaultBuildOut(buildArg);
+  }
+
+  process.env.HX_Version = '3.x';
   process.env.HX_APP_ROOT = hbxDir;
   process.env.UNI_INPUT_DIR = $G.webAppDir;
   process.env.UNI_OUTPUT_DIR = buildOutDir;
 
-  const spinner = ora();
-  try {
-    spinner.start();
-    spawnSync(node, [vite, '-p', `app-${$G.projectType}`, 'build'], { stdio: 'inherit' });
-    spinner.succeed('webapp 编译完成\n');
-  } catch (e) {
-    spinner.fail('webapp 打包环境有问题，忽略并跳过 webapp 编译\n');
+  let flag = buildArg.startsWith('build') ? 'build' : '';
+  let isWeixin = buildArg.endsWith('mp-weixin');
+
+  if (flag) {
+    spawnSync(node, [vite, flag, '-p', buildArg.split(':')[1]], { stdio: 'inherit' });
+    if ($G.args.open && isWeixin) {
+      runWeixinCli(['open', '--project', buildOutDir]);
+    }
+  } else {
+    let p = spawn(node, [vite, flag, '-p', buildArg.split(':')[1]]);
+    let first = true;
+    p.stdout.on('data', data => {
+      data = data.toString();
+      process.stdout.write(data);
+
+      if ($G.args.open && isWeixin && first && data.includes('ready in ')) {
+        first = false;
+        runWeixinCli(['open', '--project', buildOutDir]);
+      }
+    });
+
+    p.stderr.on('data', data => {
+      process.stderr.write(data.toString());
+    });
   }
+}
+
+function getDefaultBuildOut(buildArg) {
+  let isDev = buildArg.startsWith('dev:');
+  let relativeDir = '';
+
+  if (buildArg.startsWith('build:app')) {
+    relativeDir = 'unpackage/resources/' + $G.manifest.appid + '/www';
+  } else if (isDev) {
+    relativeDir = 'unpackage/dist/dev/' + buildArg.split(':')[1];
+  } else {
+    relativeDir = 'unpackage/dist/build/' + buildArg.split(':')[1];
+  }
+
+  return path.join($G.webAppDir, relativeDir);
+}
+
+function runHBuilderXCli(args) {
+  let cli = process.platform === 'darwin' ? 'Contents/MacOS/cli' : 'cli';
+  cli = path.join($G.config['hbx.dir'], cli);
+
+  if (!fs.existsSync(cli)) {
+    console.log('文件不存在: ' + cli);
+    return console.log('配置 HBuilderX 环境命令: ' + chalk.yellow('uapp config hbx.dir [path/to/HBuilderX]'));
+  }
+
+  return spawnSync(cli, args, { stdio: 'inherit' });
+}
+
+function runWeixinCli(args) {
+  let cli = process.platform === 'darwin' ? 'Contents/MacOS/cli' : 'cli';
+  cli = path.join($G.config['wx.dir'], cli);
+
+  if (!fs.existsSync(cli)) {
+    console.log('文件不存在: ' + cli);
+    return console.log('配置微信环境命令: ' + chalk.yellow('uapp config wx.dir [path/to/weixin]'));
+  }
+
+  spawnSync(cli, args, { stdio: 'inherit' });
 }
 
 function clone(url, projectName) {
