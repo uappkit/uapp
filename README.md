@@ -1,40 +1,20 @@
 ![uapp.dev](https://mixcut.b0.v56.fun/uapp/uapp.dev.png)
 
-## 了解 uapp 跨平台开发工具箱
+## uapp 能做什么
 
 ```js
 // what's uapp
 const uapp = 'universal app'
 ```
 
-uapp 是一款跨平台APP开发工具箱，所有积累都来自多年产品开发中的不断实践。开发者仅需写一套代码，就能横扫所有平台。
+uapp 是一款跨平台APP开发工具箱，深度集成 uniapp，解锁 uniapp 下的各种技能，让开发效率提升10倍以上。
+
+- [x] 开发微信小程序时，仅运行 `uapp run dev:mp-weixin --open`，就能生成小程序代码，并直接打开微信开发者工具加载。
+- [x] 开发APP离线基座，仅运行 `uapp run build:dev`，就能生成自定义基座安装包，且自动发布到 hbx 工程下面直接使用。
 
 uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序(微信/抖音/百度/QQ/飞书/钉钉/快应用等等)，也能支持所有的浏览器插件开发。
 
-多一个平台，就多了一个流量渠道，多一个平台，就多个一个用户选择的理由。传统的开发形式，不同平台需要不同的开发者经验，uapp 通过集成 uniapp，electron，tauri，只需要开发者有Web H5的开发经验，就能搞定所有平台。哪怕只开发一个平台，同样花时间写代码，为什么不选择复用价值更高的方法呢。
-
-如以下知名产品都采用了和uapp一样的跨平台方案：
-
-- [x] 微信电脑客户端
-- [x] 新版QQ桌面版
-- [x] 抖音电脑客户端
-- [x] 钉钉客户端
-- [x] Visual Studio Code
-- [x] Xmind 思维导图
-- [x] 微信开发者工具
-- [x] WhatsApp
-
-有人认为 uapp 这种跨平台方案，只是为了节省研发费用，但我相信上面这些大公司，都并不缺少研发费用，为什么还要选择 uapp 这种跨平台方案呢？如果有一种方案能让自己的产品极快的满足业务变化，紧跟市场需求，第一时间得到市场验证反馈，第一时间抓住商业机会，那么这些价值会远大于节省下来的研发费用。雷军雷总说过试错的成本并不高，但错过的成本非常高。
-
----
-
-**Android Build**
-
-![android build](https://mixcut.b0.v56.fun/uapp/android_build.gif?t=1698997415)
-
-**iOS Build**
-
-![ios build](https://mixcut.b0.v56.fun/uapp/ios_build.gif?t=1698997415)
+多一个平台，就多了一个流量渠道，多一个平台，就多个一个用户选择的理由。传统的开发形式，不同平台需要不同的的开发技能，uapp 通过集成 uniapp，electron，tauri，只需要开发者有Web H5的开发经验，就能搞定所有平台。哪怕只开发一个平台，同样花时间写代码，为什么不选择复用价值更高的方法呢。
 
 ## 一、先安装 uappsdk
 
@@ -89,9 +69,30 @@ uapp sdk init
 
 <https://nativesupport.dcloud.net.cn/AppDocs/usemodule/iOSModuleConfig/common>
 
-## 二、Vue 工程 (重点看) 🔥
+## 二、webapp 工程 (重点看) 🔥
 
-Vue 工程，有两种创建方法：
+### webapp 工程下小程序及H5直接编译
+
+```bash
+uapp run dev:h5
+uapp run dev:mp-weixin
+uapp run build:h5
+uapp run build:mp-weixin
+
+# electron 为自定义环境
+# 自定义环境教程：https://uniapp.dcloud.net.cn/collocation/package.html
+uapp run build:electron
+```
+
+👇 **uapp 编译微信小程序并打开工程**
+
+![android build](https://mixcut.b0.v56.fun/uapp/weixin_build.gif)
+
+其他更多命令，可直接参考：
+
+<https://gitee.com/dcloud/uni-preset-vue/blob/vite/package.json>
+
+### webapp 工程的创建及配置
 
 第一种：通过 `uapp new` (等同于 uniapp-cli) 命令创建
 
@@ -106,7 +107,7 @@ uapp new DemoProject --vue2 # 旧的 vue2 模版
 
 第二种，通过 HBuilderX 菜单里新建工程，和第一种cli创建的区别是，HBuilderX 创建不带 package.json 和 src 目录，等同于直接就是 src 目录里的内容。
 
-**创建好 Vue 工程后，一定要参照下面流程，获取 appid，和添加 uapp 节点。**
+**创建好 webapp 工程后，一定要参照下面流程，获取 appid，和添加 uapp 节点。**
 
 ☘️ HBuilderX 打开工程，再选中 manifest.json 配置
 
@@ -139,6 +140,10 @@ uapp new DemoProject --vue2 # 旧的 vue2 模版
 
 `uapp add android`
 
+👇 **uapp 离线打包并发布 Android 自定义基座**
+
+![android build](https://mixcut.b0.v56.fun/uapp/android_build.gif?t=1698997415)
+
 ### 2. 新建 ios 工程
 
 `uapp add ios`
@@ -146,6 +151,10 @@ uapp new DemoProject --vue2 # 旧的 vue2 模版
 > 如果当前目录已有 android 或 ios 目录，会提示错误，可将其改名后，再执行命令
 
 iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适合 DCloud离线SDK 的发布形式。经过我们在产品中的不断实践，最终选择了 XCodeGen。
+
+👇 **uapp 离线打包并发布 iOS 自定义基座**
+
+![ios build](https://mixcut.b0.v56.fun/uapp/ios_build.gif?t=1698997415)
 
 ### 3. 离线工程下常见命令
 
@@ -196,7 +205,6 @@ uapp run custom
     "package": "com.code0xff.uapp",
     "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
     "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",
-    "hbx.dir": "/Applications/HBuilderX.app/Contents/HBuilderX",
     "custom.command": "cd ${SRC}/../ && npm run build:app && cd - && uapp run build"
   },
   "app-plus": {
@@ -238,7 +246,7 @@ custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json
 | versionName    | App版本名，同上可以加前缀区分不同平台。如 android.versionName                                                           |
 | versionCode    | App版本Code，同上可以加前缀区分不同平台。如 ios.versionCode                                                            |
 | custom.command | (选填) uapp run custom 执行的自定义命令。比如一条命令里做很多事: `npm run build:app && uapp prepare && uapp run build:dev` |
-| hbx.dir        | 指定 HBuilderX 的安装目录, windows 需指定。为空时，Mac 默认使用 `/Applications/HBuilderX.app/Contents/HBuilderX`        |
+| ~~hbx.dir~~    | 已废弃，请通过 `uapp config hbx.dir [path]` 命令配置                                                            |
 
 ## 五、其他参考
 
