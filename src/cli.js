@@ -30,7 +30,7 @@ const knownOpts = {
   open: Boolean,
   webapp: Boolean,
   prepare: Boolean,
-  out: [nopt.typeDefs.path, null]
+  out: path
 };
 
 const shortHands = {
@@ -797,9 +797,10 @@ function printJWTToken() {
     "key_id": "3C7FMSZC8Z"
 }
     `);
-
-    console.log('👉 参考教程: http://help.jwt.code0xff.com');
   }
+
+  console.log();
+  console.log('👉 参考教程: http://help.jwt.code0xff.com');
 }
 
 function printAndroidKeyInfo(gradle) {

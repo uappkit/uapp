@@ -173,7 +173,6 @@ uapp prepare --no-webapp
 
 # 编译APP安装包, 并发布自定义基座到 HBuilderX 下
 uapp run build:dev
-uapp run build:dev --no-webapp
 
 # 仅编译APP安装包，但不执行 prepare 更新资源
 uapp run build:dev --no-prepare
