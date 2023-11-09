@@ -151,6 +151,9 @@ function mirror(source, target, opts, notify, depth) {
     });
 
     return copied && deletedExtra;
+  } else if (opts.delete) {
+    // incompatible types: destroy target and copy
+    return destroy(target, notify) && copy(source, target, notify);
   } else if (sourceStat.isFile() && targetStat.isFile()) {
     // compare update-time before overwriting
     if (sourceStat.mtime > targetStat.mtime || sourceStat.size !== targetStat.size) {
@@ -158,9 +161,6 @@ function mirror(source, target, opts, notify, depth) {
     } else {
       return true;
     }
-  } else if (opts.delete) {
-    // incompatible types: destroy target and copy
-    return destroy(target, notify) && copy(source, target, notify);
   } else if (sourceStat.isFile() && targetStat.isDirectory()) {
     // incompatible types
     notify('error', "Cannot copy file '" + source + "' to '" + target + "' as existing folder");
@@ -197,7 +197,7 @@ function copy(source, target, notify) {
 function destroy(fileordir, notify) {
   notify('remove', fileordir);
   try {
-    fs.remove(fileordir);
+    fs.removeSync(fileordir);
     return true;
   } catch (e) {
     notify('error', e);

@@ -18,7 +18,7 @@ const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
 const stripJsonComments = require('./stripJsonComments');
-const { removeSync, pathExistsSync } = require('fs-extra');
+const { emptyDirSync, removeSync, pathExistsSync } = require('fs-extra');
 
 const knownOpts = {
   version: Boolean,
@@ -362,7 +362,7 @@ module.exports = function (inputArgs) {
       let buildOutFile = path.join($G.appDir, 'app/build/outputs/apk/', outFileMap[buildType]);
 
       if (buildType === 'build:dev' && args.copy) {
-        sync(buildOutFile, path.join($G.webAppDir, 'unpackage/debug/android_debug.apk'));
+        sync(buildOutFile, path.join($G.webAppDir, 'unpackage/debug/android_debug.apk'), { delete: true });
       }
 
       console.log('\n编译成功，安装包位置: ');
@@ -399,7 +399,8 @@ module.exports = function (inputArgs) {
       if (args.copy) {
         sync(
           path.join($G.appDir, 'out/HBuilder.ipa'),
-          path.join($G.webAppDir, 'unpackage/debug/ios_debug.ipa')
+          path.join($G.webAppDir, 'unpackage/debug/ios_debug.ipa'),
+          { delete: true }
         );
       }
       return;
@@ -449,31 +450,6 @@ function getFiles(dir, files_) {
     }
   }
   return files_;
-}
-
-function cleanEmptyFoldersRecursively(folder) {
-  const fs = require('fs');
-  const path = require('path');
-
-  if (!fs.statSync(folder).isDirectory()) {
-    return;
-  }
-
-  let files = fs.readdirSync(folder);
-  if (files.length > 0) {
-    files.forEach(function (file) {
-      const fullPath = path.join(folder, file);
-      cleanEmptyFoldersRecursively(fullPath);
-    });
-
-    // re-evaluate files; after deleting subfolder
-    // we may have parent folder empty now
-    files = fs.readdirSync(folder);
-  }
-
-  if (files.length === 0) {
-    removeSync(folder);
-  }
 }
 
 function checkManifest() {
@@ -555,13 +531,11 @@ function prepareCommand() {
 
   let embedAppsDir = path.join(
     $G.appDir,
-    $G.projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps',
-    $G.manifest.appid
+    $G.projectType === 'ios' ? 'Main/Pandora/apps' : 'app/src/main/assets/apps'
   );
 
-  fs.existsSync(embedAppsDir) && removeSync(embedAppsDir);
-  fs.mkdirSync(embedAppsDir, { recursive: true });
-  sync(compiledDir, embedAppsDir);
+  emptyDirSync(embedAppsDir);
+  sync(compiledDir, path.join(embedAppsDir, $G.manifest.appid));
   console.log(chalk.green('APP打包所需资源已更新'));
 }
 
@@ -600,8 +574,7 @@ function updateAndroidMetaData() {
     });
   }
 
-  // cleanup empty folder
-  cleanEmptyFoldersRecursively(sourceDir);
+  emptyDirSync(sourceDir);
 
   // DONT change content here
   let contentOfEntryFiles = {
