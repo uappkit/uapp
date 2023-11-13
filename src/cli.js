@@ -470,19 +470,19 @@ function checkManifest() {
 }
 
 function loadManifest() {
-  if (
-    !['android', 'ios'].includes($G.projectType) &&
-    ($G.args.argv.remain[0] === 'run' && !$G.args.argv.remain[1].includes(':app'))
-  ) {
-    return;
-  }
-
   checkManifest();
   console.log('当前使用 manifest: ' + $G.localLinkManifest);
 
   if (fs.existsSync($G.localLinkManifest)) {
     let content = fs.readFileSync($G.localLinkManifest, 'utf8');
     $G.manifest = JSON.parse(stripJsonComments(content));
+  }
+
+  if (
+    !['android', 'ios'].includes($G.projectType) &&
+    ($G.args.argv.remain[0] === 'run' && !$G.args.argv.remain[1].includes(':app'))
+  ) {
+    return;
   }
 
   if (!$G.manifest.appid) {
