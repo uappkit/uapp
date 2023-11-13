@@ -110,7 +110,17 @@ module.exports = function (inputArgs) {
   }
 
   if (cmd === 'config') {
+    if (args.argv.remain[1] && args.argv.remain[1].includes('=')) {
+      return console.log(chalk.yellow('参数不支持 = , 请使用空格间隔参数'));
+    }
+
     $G.config[args.argv.remain[1]] = args.argv.remain[2];
+    if (args.argv.remain[2] === undefined) {
+      console.log(chalk.yellow(`已移除参数 ${args.argv.remain[1]}`));
+    } else {
+      console.log(chalk.green(`已配置参数 ${args.argv.remain[1]}: ${args.argv.remain[2]}`));
+    }
+
     return fs.writeFileSync(path.join($G.sdkHomeDir, 'config.json'), JSON.stringify($G.config, null, 2));
   }
 
@@ -802,22 +812,49 @@ function printAndroidKeyInfo(gradle) {
 }
 
 function buildWebApp(buildArg) {
-  let platform = process.platform;
-  if (!['win32', 'darwin'].includes(platform)) {
-    return console.log(`无法编译 webapp, 暂不支持系统 ${platform}`);
-  }
-
-  let hbxDir = path.join($G.config['hbx.dir'], process.platform === 'darwin' ? 'Contents/HBuilderX' : '');
+  let hbxDir = $G.config['hbx.dir'];
   if (!fs.existsSync(hbxDir)) {
     console.log('文件不存在: ' + $G.config['hbx.dir']);
     console.log('配置 HBuilderX 环境命令: ' + chalk.yellow('uapp config hbx.dir [path/to/HBuilderX]'));
     process.exit();
   }
 
+  if (process.platform === 'darwin' && fs.existsSync(path.join(hbxDir, 'Contents/HBuilderX'))) {
+    hbxDir = path.join(hbxDir, 'Contents/HBuilderX');
+  }
+
   let node = path.join(hbxDir, 'plugins/node/node');
-  let vite = path.join(hbxDir, 'plugins/uniapp-cli-vite/node_modules/@dcloudio/vite-plugin-uni/bin/uni.js');
-  if (!fs.existsSync(vite)) {
-    console.log(chalk.yellow('HBuilderX 需要安装插件 => uni-app (vue3) 编译器'));
+  if (!fs.existsSync(node)) {
+    node = $G.config.node;
+  }
+
+  if (!node || !fs.existsSync(node)) {
+    console.log('找不到 node 位置: ' + node);
+    console.log('配置 node: ' + chalk.yellow('uapp config node [path/to/node]'));
+    process.exit();
+  }
+
+  let vue = 'vue2';
+  let spawnArgs = [];
+  let buildScript;
+
+  let flag = buildArg.startsWith('build') ? 'build' : '';
+  let isWeixin = buildArg.endsWith('mp-weixin');
+
+  if (Number($G.manifest.vueVersion) === 3) {
+    vue = 'vue3';
+    buildScript = path.join(hbxDir, 'plugins/uniapp-cli-vite/node_modules/@dcloudio/vite-plugin-uni/bin/uni.js');
+    spawnArgs = [buildScript, flag, '-p', buildArg.split(':')[1]];
+  } else {
+    buildScript = path.join(hbxDir, 'plugins/uniapp-cli/bin/uniapp-cli.js');
+    process.env.NODE_PATH = path.join(hbxDir, 'plugins/uniapp-cli/node_modules');
+    process.env.VUE_CLI_CONTEXT = process.env.UNI_CLI_CONTEXT = path.join(hbxDir, 'plugins/uniapp-cli');
+    process.env.UNI_PLATFORM = buildArg.split(':')[1];
+    spawnArgs = [buildScript];
+  }
+
+  if (!fs.existsSync(buildScript)) {
+    console.log(chalk.yellow(`HBuilderX 需要安装插件 => uni-app (${vue}) 编译器`));
     process.exit();
   }
 
@@ -827,26 +864,28 @@ function buildWebApp(buildArg) {
   }
 
   process.env.HX_Version = '3.x';
-  process.env.HX_APP_ROOT = hbxDir;
+  process.env.HX_APP_ROOT = process.env.APP_ROOT = hbxDir;
   process.env.UNI_INPUT_DIR = $G.webAppDir;
   process.env.UNI_OUTPUT_DIR = buildOutDir;
-
-  let flag = buildArg.startsWith('build') ? 'build' : '';
-  let isWeixin = buildArg.endsWith('mp-weixin');
+  process.env.NODE_ENV = flag === 'build' ? 'production' : 'development';
 
   if (flag) {
-    spawnSync(node, [vite, flag, '-p', buildArg.split(':')[1]], { stdio: 'inherit' });
+    spawnSync(node, spawnArgs, { stdio: 'inherit' });
     if ($G.args.open && isWeixin) {
       runWeixinCli(['open', '--project', buildOutDir]);
     }
   } else {
-    let p = spawn(node, [vite, flag, '-p', buildArg.split(':')[1]]);
+    let p = spawn(node, spawnArgs);
     let first = true;
     p.stdout.on('data', data => {
       data = data.toString();
       process.stdout.write(data);
 
-      if ($G.args.open && isWeixin && first && data.includes('ready in ')) {
+      if ($G.args.open &&
+        isWeixin &&
+        first &&
+        (data.includes('Watching for changes') || data.includes('ready in '))
+      ) {
         first = false;
         runWeixinCli(['open', '--project', buildOutDir]);
       }
@@ -874,7 +913,14 @@ function getDefaultBuildOut(buildArg) {
 }
 
 function runHBuilderXCli(args) {
-  let cli = process.platform === 'darwin' ? 'Contents/MacOS/cli' : 'cli';
+  let cli = 'cli';
+  if (process.platform === 'darwin') {
+    if (fs.existsSync(path.join($G.config['hbx.dir'], '../MacOS/cli'))) {
+      cli = '../MacOS/cli';
+    } else {
+      cli = 'Contents/MacOS/cli';
+    }
+  }
   cli = path.join($G.config['hbx.dir'], cli);
 
   if (!fs.existsSync(cli)) {
