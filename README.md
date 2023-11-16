@@ -7,20 +7,19 @@
 const uapp = 'universal app'
 ```
 
-uapp 是一款跨平台APP开发工具箱，深度集成 uniapp，解锁 uniapp 下的各种技能，让开发效率提升10倍以上。
+uapp是一款方便uni-app开发的cli工具，并通过集成electron, tauri扩展到桌面应用开发。开发者仅需维护一套代码，就能横扫所有平台。支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序，浏览器插件等等。让Web开发者能搞更多事情，会H5就够用了。
 
 - [x] 开发微信小程序时，仅运行 `uapp run dev:mp-weixin --open`，就能生成小程序代码，并直接打开微信开发者工具加载。
 - [x] 开发APP离线基座，仅运行 `uapp run build:dev`，就能生成自定义基座安装包，且自动发布到 hbx 工程下面直接使用。
+- [x] `uapp info` 可以查看包名, 签名 md5, dcloudkey, jwt 等开发中用到的各种信息。
 
-uapp 支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序(微信/抖音/百度/QQ/飞书/钉钉/快应用等等)，也能支持所有的浏览器插件开发。
-
-多一个平台，就多了一个流量渠道，多一个平台，就多个一个用户选择的理由。传统的开发形式，不同平台需要不同的的开发技能，uapp 通过集成 uniapp，electron，tauri，只需要开发者有Web H5的开发经验，就能搞定所有平台。哪怕只开发一个平台，同样花时间写代码，为什么不选择复用价值更高的方法呢。
+多一个平台，就多了一个流量渠道，多一个平台，就多个用户选择的理由，而做这些事，仅需维护一套代码。哪怕只开发一个平台，同样花时间写代码，为什么不选择复用价值更高的方法呢。
 
 ## 一、先安装 uappsdk
 
 1、 安装 uapp 命令
 
-```
+```bash
 npm install -g uapp
 
 # 初始化或更新 uappsdk
@@ -158,7 +157,7 @@ iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适
 
 ### 3. 离线工程下常见命令
 
-```
+```bash
 # 读取 manifest 中的配置，并更新基本信息
 uapp manifest path/to/manifest.json
 
@@ -193,7 +192,7 @@ uapp run custom
 
 原工程里的 `manifest.json` 内的参数，大多是给 hbuiderx 在线云打包用的。编译后生成的终极发布包，里面的 manifest.json 已被去除了无关数据，所以不用担心参数暴露问题。
 
-```.json
+```json
 {
   "name": "uapp",
   "appid": "__UNI__ECA8F4D",
@@ -245,7 +244,6 @@ custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json
 | versionName    | App版本名，同上可以加前缀区分不同平台。如 android.versionName                                                           |
 | versionCode    | App版本Code，同上可以加前缀区分不同平台。如 ios.versionCode                                                            |
 | custom.command | (选填) uapp run custom 执行的自定义命令。比如一条命令里做很多事: `npm run build:app && uapp prepare && uapp run build:dev` |
-| ~~hbx.dir~~    | 已废弃，请通过 `uapp config hbx.dir [path]` 命令配置                                                            |
 
 ## 五、其他参考
 
@@ -253,11 +251,11 @@ custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json
 
 1、获取到 team_id, client_id, key_id 填入到 jwt/config.json 中，如下：
 
-```.json
+```json
 {
-    "team_id": "3DSM494K6L",
-    "client_id": "com.code0xff.uapp.login",
-    "key_id": "3C7FMSZC8Z"
+  "team_id": "3DSM494K6L",
+  "client_id": "com.code0xff.uapp.login",
+  "key_id": "3C7FMSZC8Z"
 }
 ```
 
@@ -280,6 +278,34 @@ custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json
 ### 跨端开发注意事项
 
 <https://uniapp.dcloud.io/matter.html>
+
+## 六、Win / Mac / Linux 等桌面应用开发
+
+桌面应用可以将 uniapp 编译成 H5，再集成到 electron 或 tauri 中。当需要扩展系统能力时，相关方法如下：
+
+### electron 如何扩展
+
+electron集成了node，可通过`node-gyp`的方法扩展。API 自带了丰富的系统能力，能够满足据绝大多数应用，文档参考如下：
+
+<https://www.electronjs.org/docs/latest/api/app>
+
+> 优点: 对前端没学习难度，会node就行。node能做的，electron也都能做，可充分利用node生态。
+>
+> 缺点: electron 由于集成了 Chromium，生成安装包很大，动不动就100M上下。
+
+### tauri 如何扩展
+
+tauri是基于`rust`开发，可以通过`rust`生态来扩展，`v2`还处在alpha阶段，新增了手机端支持。`v1`的参考文档如下：
+
+<https://tauri.app/v1/api/js/>
+
+> 优点: 由于利用了系统内嵌的webview，生成安装包很小，通常几M。很方便通过 rust 语言扩展，能充分利用 rust 生态。
+>
+> 缺点: webview 每个系统下略有差异，UI细节可能不一致。tauri 推出时间短，生态不如 electron 健全，用 rust 也有较高的学习成本，如果不在乎 size，首推 electron
+
+👇 uapp 基于 Electron 桌面应用案例
+
+![electron demo](https://mixcut.b0.v56.fun/uapp/electron_demo.gif)
 
 ---
 
