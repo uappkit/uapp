@@ -584,8 +584,6 @@ function updateAndroidMetaData() {
     });
   }
 
-  emptyDirSync(sourceDir);
-
   // DONT change content here
   let contentOfEntryFiles = {
     [wxEntryActivityFile]: `package ${$G.manifest.uapp.package}.wxapi;
