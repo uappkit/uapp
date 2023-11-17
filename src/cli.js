@@ -514,7 +514,7 @@ function loadManifest() {
 
 function prepareCommand() {
   if ($G.args.webapp) {
-    buildWebApp('build:app-' + $G.projectType);
+    buildWebApp('build:app-' + (Number($G.manifest.vueVersion) === 3 ? $G.projectType : 'plus'));
   }
 
   let compiledDir = path.join($G.webAppDir, 'unpackage/resources/', $G.manifest.appid);
@@ -576,13 +576,6 @@ function updateAndroidMetaData() {
     '$1' + $G.manifest['app-plus'].distribute.sdkConfigs.oauth.weixin.appsecret + '$3'
   );
   fs.writeFileSync(baseGradleFile, content);
-
-  let sourceDir = path.join($G.appDir, 'app/src/main/java/');
-  for (const entryFile of [wxEntryActivityFile, wXPayEntryActivityFile]) {
-    getFiles(sourceDir).forEach((file) => {
-      file.endsWith(entryFile) && fs.unlinkSync(file);
-    });
-  }
 
   // DONT change content here
   let contentOfEntryFiles = {
@@ -832,12 +825,13 @@ function buildWebApp(buildArg) {
     process.exit();
   }
 
-  let vue = 'vue2';
-  let spawnArgs = [];
-  let buildScript;
-
   let flag = buildArg.startsWith('build') ? 'build' : '';
   let isWeixin = buildArg.endsWith('mp-weixin');
+
+  let vue = 'vue2';
+  let spawnArgs = [];
+  let spawnOpts = flag ? { stdio: 'inherit' } : {};
+  let buildScript;
 
   if (Number($G.manifest.vueVersion) === 3) {
     vue = 'vue3';
@@ -846,7 +840,7 @@ function buildWebApp(buildArg) {
   } else {
     buildScript = path.join(hbxDir, 'plugins/uniapp-cli/bin/uniapp-cli.js');
     process.env.NODE_PATH = path.join(hbxDir, 'plugins/uniapp-cli/node_modules');
-    process.env.VUE_CLI_CONTEXT = process.env.UNI_CLI_CONTEXT = path.join(hbxDir, 'plugins/uniapp-cli');
+    spawnOpts.cwd = process.env.VUE_CLI_CONTEXT = process.env.UNI_CLI_CONTEXT = path.join(hbxDir, 'plugins/uniapp-cli');
     process.env.UNI_PLATFORM = buildArg.split(':')[1];
     spawnArgs = [buildScript];
   }
@@ -868,12 +862,13 @@ function buildWebApp(buildArg) {
   process.env.NODE_ENV = flag === 'build' ? 'production' : 'development';
 
   if (flag) {
-    spawnSync(node, spawnArgs, { stdio: 'inherit' });
+    spawnSync(node, spawnArgs, spawnOpts);
+    console.log('资源输出位置: ' + chalk.green(buildOutDir));
     if ($G.args.open && isWeixin) {
       runWeixinCli(['open', '--project', buildOutDir]);
     }
   } else {
-    let p = spawn(node, spawnArgs);
+    let p = spawn(node, spawnArgs, spawnOpts);
     let first = true;
     p.stdout.on('data', data => {
       data = data.toString();
