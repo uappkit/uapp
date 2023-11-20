@@ -528,15 +528,19 @@ function prepareCommand() {
   // 如果没生成过图标目录, 跳过
   if (pathExistsSync(resDir)) {
     if ($G.projectType === 'android') {
-      updateAndroidMetaData();
       updateAndroidIcons(resDir);
     } else if ($G.projectType === 'ios') {
-      updateIOSMetaData();
       updateIOSIcons(resDir);
     }
   } else {
     console.log(chalk.yellow('未发现图标资源，跳过App图标更新'));
     console.log('更新图标请使用 HBuilderX => manifest.json 配置 => App图标配置 => 自动生成所有图标\n');
+  }
+
+  if ($G.projectType === 'android') {
+    updateAndroidMetaData();
+  } else if ($G.projectType === 'ios') {
+    updateIOSMetaData();
   }
 
   let embedAppsDir = path.join(
@@ -691,9 +695,18 @@ function replaceInfoPlist(plistFile) {
 }
 
 function replaceControlXml(xmlFile) {
+  let sdkControlFile = path.join($G.sdkHomeDir, '/ios/SDK/control.xml');
+  let innerSDKVersion = '1.0.0';
+  if (fs.existsSync(sdkControlFile)) {
+    let content = fs.readFileSync(sdkControlFile, 'utf-8');
+    innerSDKVersion = content.match(/<HBuilder.+version="(.*)"/)[1] || innerSDKVersion;
+  }
+
   let content = fs.readFileSync(xmlFile, 'utf-8');
   let re = /(app appid=")(.+?)(")/g;
   content = content.replace(re, '$1' + $G.manifest.appid + '$3');
+  content = content.replace(/(<HBuilder.+version=")(.*)(")/, '$1' + innerSDKVersion + '$3');
+
   fs.writeFileSync(xmlFile, content);
 }
 
