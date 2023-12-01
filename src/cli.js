@@ -13,7 +13,7 @@ const ora = require('ora');
 
 const path = require('path');
 const { execSync, spawnSync, spawn } = require('child_process');
-const tiged = require('tiged');
+const tiged = require('@uappx/tiged');
 const chalk = require('chalk');
 const pkg = require('../package.json');
 const sync = require('./sync');
