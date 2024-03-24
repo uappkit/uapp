@@ -173,12 +173,7 @@ module.exports = function (inputArgs) {
         console.log('npm i -g @vue/cli')
       }
     } else {
-      let branch = args.alpha ? '#vite-alpha' : '#vite'
-      if (args.typescript) {
-        branch = '#vite-ts'
-      }
-
-      clone(`https://gitee.com/dcloud/uni-preset-vue.git${branch}`, projectName)
+      clone(`https://gitee.com/uappkit/platform.git/src/#main`, projectName)
     }
     return
   }

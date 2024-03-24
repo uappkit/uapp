@@ -317,8 +317,8 @@ tauri是基于`rust`开发，可以通过`rust`生态来扩展，`v2`还处在al
 
 The Apache License 2. Please see [License File](LICENSE.md) for more information.
 
-## 联系我
+## 联系作者
 
 如果你在使用 uapp 中，遇到问题，或有改进建议，欢迎联系
 
-+vx: `yinqisen`
++作者vx: 28451307
