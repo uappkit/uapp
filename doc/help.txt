@@ -2,7 +2,7 @@
 uapp 通用命令🔥
 
   - 新建工程
-    uapp new demo1    # cli 方式新建 webapp 工程
+    uapp new demo1    # 使用 uapp-webapp 模版新建工程
     uapp add android  # 当前目录下创建 android 工程
     uapp add ios      # 当前目录下创建 ios 工程
 
@@ -13,6 +13,7 @@ uapp 通用命令🔥
   - app 工程下命令
     uapp run build:dev              # 编译并发布自定义基座到 HBuilderX 下
     uapp run build                  # 编译 release 发布包, iOS 直接用 Xcode
+    uapp run build:aab              # android 下打包为 aab 的格式
 
   - 配置 HBuilderX 和 微信安装环境
     uapp config hbx.dir "C:\Program Files (x86)\HBuilderX"

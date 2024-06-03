@@ -7,7 +7,11 @@
 const uapp = 'universal app'
 ```
 
-uapp是一款方便uni-app开发的cli工具，并通过集成electron, tauri扩展到桌面应用开发。开发者仅需维护一套代码，就能横扫所有平台。支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序，浏览器插件等等。让Web开发者能搞更多事情，会H5就够用了。
+uapp源自跨平台开发的最佳实践, 通过集成 uni-app, electron, tauri，让开发者仅需维护一套代码，就能横扫所有平台。
+
+uapp支持所有的手机端(android, ios)，支持所有的电脑端(windows, mac osx, linux)，支持所有的小程序，浏览器插件等等。
+
+uapp让Web开发者能搞更多事情，会H5就可以无限制重构一切软件。
 
 - [x] 开发微信小程序时，仅运行 `uapp run dev:mp-weixin --open`，就能生成小程序代码，并直接打开微信开发者工具加载。
 - [x] 开发APP离线基座，仅运行 `uapp run build:dev`，就能生成自定义基座安装包，且自动发布到 hbx 工程下面直接使用。
@@ -53,9 +57,9 @@ uapp sdk init
 
 > SDK 相关文件都放在当前用户的 $HOME/.uappsdk 目录下。
 
-需要引入哪些模板，请务必仔细阅读官方的 SDK 模块依赖说明，包含多了会影响APP审核，少了会影响功能使用。
+需要引入哪些模块，请务必仔细阅读官方的 SDK 模块依赖说明，模块多了会影响APP审核，少了会影响功能使用。
 
-.uappsdk 目录下默认包含的第三方依赖包，仅含有微信授权登录，苹果授权登录，基础功能等。不包含广告、通知等相关依赖，因为广告和通知类的sdk，在审核时需要特别提交数据跟踪说明，比较麻烦。
+.uappsdk 目录下默认包含的第三方依赖包，仅含有微信授权登录，苹果授权登录，支付等基础功能。不包含广告、通知等相关依赖，因为广告和通知类的sdk，在审核时需要特别提交数据跟踪说明，比较麻烦。
 
 如不是必须，最好不包含。如果确实需要，可以自行手动添加，参照如下模块依赖说明。
 
@@ -93,18 +97,17 @@ uapp run build:electron
 
 ### webapp 工程的创建及配置
 
-第一种：通过 `uapp new` (等同于 uniapp-cli) 命令创建
+第一种：通过 `uapp new` 新建工程，使用 `uapp-webapp` 模版。
+
+`uapp-webapp` 模版里集成了 unocss/tailwindcss, uvui。自带网络请求配置，可直接使用 uni.$uv.http，使用方法，可以参考模版里自带的 README 文档:  
+<https://gitee.com/uappkit/platform/tree/main/src>
 
 ```bash
-# 不带参数，默认使用 vue3 & vite 模版
-uapp new DemoProject
-
-# 支持参数
-uapp new DemoProject --alpha --typescript
-uapp new DemoProject --vue2 # 旧的 vue2 模版
+# 默认使用 uapp-webapp 模版
+uapp new YourProject
 ```
 
-第二种，通过 HBuilderX 菜单里新建工程，和第一种cli创建的区别是，HBuilderX 创建不带 package.json 和 src 目录，等同于直接就是 src 目录里的内容。
+第二种，通过 HBuilderX 菜单里新建工程，使用官方自带模版。
 
 **创建好 webapp 工程后，一定要参照下面流程，获取 appid，和添加 uapp 节点。**
 
@@ -179,8 +182,11 @@ uapp run build:dev --no-prepare
 # 仅编译APP安装包，但不发布自定义基座到 HBuidlerX 下
 uapp run build:dev --no-copy
 
-# 编译 android release apk
+# 编译 android apk 格式
 uapp run build
+
+# 编译 android aab 格式 (发布到 Google Play)
+uapp run build:aab
 
 # 运行自定义打包发布流程，配置见 manifest.json => custom.command
 uapp run custom

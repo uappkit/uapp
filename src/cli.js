@@ -342,8 +342,8 @@ module.exports = function (inputArgs) {
       return buildWebApp(args.argv.remain[1])
     }
 
-    if (!['build', 'build:dev'].includes(args.argv.remain[1])) {
-      return console.log('命令无效，app 仅支持 uapp run build / build:dev')
+    if (!['build', 'build:dev', 'build:aab'].includes(args.argv.remain[1])) {
+      return console.log('命令无效，app 仅支持 uapp run build / build:dev / build:aab')
     }
 
     if (args.prepare) {
@@ -354,17 +354,19 @@ module.exports = function (inputArgs) {
     if ($G.projectType === 'android') {
       let assembleTypeMap = {
         'build': 'assembleRelease',
-        'build:dev': 'assembleDebug'
+        'build:dev': 'assembleDebug',
+        'build:aab': 'bundleRelease',
       }
 
       let outFileMap = {
-        'build': 'release/app-release.apk',
-        'build:dev': 'debug/app-debug.apk'
+        'build': 'apk/release/app-release.apk',
+        'build:dev': 'apk/debug/app-debug.apk',
+        'build:aab': 'bundle/release/app-release.aab',
       }
 
       let gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
-      execSync(gradle + ` ${assembleTypeMap[buildType]}`, { stdio: 'inherit' })
-      let buildOutFile = path.join($G.appDir, 'app/build/outputs/apk/', outFileMap[buildType])
+      execSync(gradle + ` ${assembleTypeMap[buildType]} -s`, { stdio: 'inherit' })
+      let buildOutFile = path.join($G.appDir, 'app/build/outputs/', outFileMap[buildType])
 
       if (buildType === 'build:dev' && args.copy) {
         sync(buildOutFile, path.join($G.webAppDir, 'unpackage/debug/android_debug.apk'), { delete: true })
