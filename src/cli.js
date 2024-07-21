@@ -2,7 +2,7 @@
  * Author: Yin Qisen <yinqisen@gmail.com>
  * Github: https://github.com/uappkit
  *
- * Copyright(c) 2022 - 2023, uapp.dev
+ * Copyright(c) 2022 - 2024, uapp.dev
  */
 
 const _ = require('lodash')
@@ -75,6 +75,50 @@ module.exports = function (inputArgs) {
   const cmd = args.argv.remain[0] || 'help'
   if (!cmd || cmd === 'help' || args.help) {
     printHelp()
+    return
+  }
+
+  if (cmd === 'privacy') {
+    const readline = require('readline/promises')
+    const { stdin: input, stdout: output } = require('process');
+
+    (async () => {
+      const rl = readline.createInterface({ input, output })
+      try {
+        console.log(chalk.yellow('提示: uapp 不承诺协议内容的专业合法性，如您对此有要求，请咨询专业律师起草，并自行替换'))
+        const companyFullName = await rl.question('输入公司全名: ')
+        const companyShortName = await rl.question('输入公司简称: ')
+        const appName = await rl.question('输入APP名字: ')
+        const contactUs = await rl.question('输入联系方式: ')
+
+        let regTplFile = path.resolve('./reg.tpl.md')
+        let privacyTplFile = path.resolve('./privacy.tpl.md')
+        if (!fs.existsSync(regTplFile)) {
+          regTplFile = path.resolve(__dirname, '../uappsdk/templates/privacy/reg.tpl.md')
+        }
+
+        if (!fs.existsSync(privacyTplFile)) {
+          privacyTplFile = path.resolve(__dirname, '../uappsdk/templates/privacy/privacy.tpl.md')
+        }
+
+        [regTplFile, privacyTplFile].map(file => {
+          let content = fs.readFileSync(file, 'utf-8')
+          content = content.replace(/\$COMPANY_FULL\$/g, companyFullName)
+          content = content.replace(/\$COMPANY_SHORT\$/g, companyShortName)
+          content = content.replace(/\$APPNAME\$/g, appName)
+          content = content.replace(/\$CONTACT_US\$/g, contactUs)
+
+          let newFile = file.replace('.tpl.md', '.md').split('/').pop()
+          newFile = path.resolve('./' + newFile)
+          fs.writeFileSync(newFile, content)
+          console.log(chalk.green(newFile))
+        })
+      } catch (err) {
+        console.log(`Error: `, err)
+      } finally {
+        rl.close()
+      }
+    })()
     return
   }
 

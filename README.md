@@ -59,7 +59,7 @@ uapp sdk init
 
 需要引入哪些模块，请务必仔细阅读官方的 SDK 模块依赖说明，模块多了会影响APP审核，少了会影响功能使用。
 
-.uappsdk 目录下默认包含的第三方依赖包，仅含有微信授权登录，苹果授权登录，支付等基础功能。不包含广告、通知等相关依赖，因为广告和通知类的sdk，在审核时需要特别提交数据跟踪说明，比较麻烦。
+android和ios工程模版仅含有微信授权登录，苹果授权登录，支付等一些基础功能。不包含广告、通知等相关依赖，因为广告和通知类的模块，在审核时需要特别提交数据跟踪说明，比较麻烦。
 
 如不是必须，最好不包含。如果确实需要，可以自行手动添加，参照如下模块依赖说明。
 
@@ -252,6 +252,12 @@ custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json
 | custom.command | (选填) uapp run custom 执行的自定义命令。比如一条命令里做很多事: `npm run build:app && uapp prepare && uapp run build:dev` |
 
 ## 五、其他参考
+
+### 生成用户注册协议，隐私协议
+
+`uapp privacy`
+
+具体参考: [privacy/README.md](uappsdk/templates/privacy/readme.md)
 
 ### iOS 苹果授权登录
 
