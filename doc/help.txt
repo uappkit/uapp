@@ -14,9 +14,10 @@ uapp 通用命令🔥
     uapp run build:mp-weixin --open # 参数 open 表示使用微信开发者工具打开
 
   - app 工程下命令
-    uapp run build:dev              # 编译并发布自定义基座到 HBuilderX 下
-    uapp run build                  # 编译 release 发布包, iOS 直接用 Xcode
-    uapp run build:aab              # android 下打包为 aab 的格式
+    uapp run build:app                # 编译并发布自定义基座到 HBuilderX 下
+    uapp run build:app-plus           # vue2 要用 app-plus, 与 uniapp 一致
+    uapp run build:app --release apk  # 编译 release 发布包
+    uapp run build:app -r aab         # android 下打包为 aab 的格式
 
   - 配置 HBuilderX 和 微信安装环境
     uapp config hbx.dir "C:\Program Files (x86)\HBuilderX"
@@ -36,8 +37,8 @@ app 工程下命令:
     uapp keygen                          # 生成 android 的签名文件 app.keystore
 
   - 更新打包用到的数据，包括版本信息, dcloudkey, App图标, 本地打包资源等
-    uapp prepare
-    uapp prepare --no-webapp             # 不编译 webapp
+    uapp prepare app:build
+    uapp prepare app:build --no-webapp             # 不编译 webapp
 
   - 运行自定义打包发布流程，配置见 README.md
     uapp run custom

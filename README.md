@@ -14,7 +14,7 @@ uapp支持所有的手机端(android, ios)，支持所有的电脑端(windows, m
 uapp让Web开发者能搞更多事情，会H5就可以无限制重构一切软件。
 
 - [x] 开发微信小程序时，仅运行 `uapp run dev:mp-weixin --open`，就能生成小程序代码，并直接打开微信开发者工具加载。
-- [x] 开发APP离线基座，仅运行 `uapp run build:dev`，就能生成自定义基座安装包，且自动发布到 hbx 工程下面直接使用。
+- [x] 开发APP离线基座，仅运行 `uapp run build:app`，就能生成自定义基座安装包，且自动发布到 hbx 工程下面直接使用。
 - [x] `uapp info` 可以查看包名, 签名 md5, dcloudkey, jwt 等开发中用到的各种信息。
 
 多一个平台，就多了一个流量渠道，多一个平台，就多个用户选择的理由，而做这些事，仅需维护一套代码。哪怕只开发一个平台，同样花时间写代码，为什么不选择复用价值更高的方法呢。
@@ -160,6 +160,35 @@ iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适
 
 ### 3. 离线工程下常见命令
 
+> 注意：uapp 从 3.0 开始，放弃了 run build / run build:dev，和 uniapp 一致，方便自定义扩展。
+
+命令格式为 `uapp run build:app*`，vue2 工程用 `uapp run build:app-plus`。必须是 app 开头, 非 app 类型，如 H5 没有这个限制。
+
+自定义扩展，package.json 中添加:
+
+```json5
+// 如何使用自定义命令：
+// uapp run build:app-codex
+
+{
+  "uni-app": {
+    "scripts": {
+      // app-codex 这里必须是 app 开头, 非 app 类型，如 H5 没有这个限制
+      "app-codex": {
+        "title": "自定义命令",
+        "browser": "",
+        "env": {
+          "UNI_PLATFORM": "app",
+          "CUSTOM_ENV": "123456"
+        }
+      }
+    }
+  }
+}
+```
+
+其他一些命令参考:
+
 ```bash
 # 读取 manifest 中的配置，并更新基本信息
 uapp manifest path/to/manifest.json
@@ -168,25 +197,19 @@ uapp manifest path/to/manifest.json
 uapp info
 
 # 更新 HBuilderX 生成的App图标和本地打包资源
-uapp prepare
-
-# 不执行编译 webapp
-uapp prepare --no-webapp
+uapp prepare build:app
 
 # 编译APP安装包, 并发布自定义基座到 HBuilderX 下
-uapp run build:dev
+uapp run build:app
 
-# 仅编译APP安装包，但不执行 prepare 更新资源
-uapp run build:dev --no-prepare
-
-# 仅编译APP安装包，但不发布自定义基座到 HBuidlerX 下
-uapp run build:dev --no-copy
+# vue2 要使用 app-plus，与 uniapp 一致
+uapp run build:app-plus
 
 # 编译 android apk 格式
-uapp run build
+uapp run build:app -r apk
 
 # 编译 android aab 格式 (发布到 Google Play)
-uapp run build:aab
+uapp run build:app -r aab
 
 # 运行自定义打包发布流程，配置见 manifest.json => custom.command
 uapp run custom
@@ -209,7 +232,7 @@ uapp run custom
     "package": "com.code0xff.uapp",
     "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
     "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",
-    "custom.command": "cd ${SRC}/../ && npm run build:app && cd - && uapp run build"
+    "custom.command": "cd ${SRC}/../android && uapp run build:app && node publish_apk.js"
   },
   "app-plus": {
     "distribute": {
@@ -241,15 +264,15 @@ custom.command 参数内，可以使用 `${SRC}, ${SRC}` 为当前 manifest.json
 
 👇👇 👇
 
-| uapp.* 参数      | 说明                                                                                                   |
-|:---------------|------------------------------------------------------------------------------------------------------|
-| name           | APP名字，不填写默认使用根节点的name。不同平台可以加前缀区分，如 android.name                                                     |
-| package        | 应用的包名。不同平台可以加前缀区分，如 ios.package                                                                      |
-| android.appkey | DCloud平台申请的，Android 平台 dcloud_appkey，下方有申请地址                                                         |
-| ios.appkey     | DCloud平台申请的，iOS 平台 dcloud_appkey，下方有申请地址                                                             |
-| versionName    | App版本名，同上可以加前缀区分不同平台。如 android.versionName                                                           |
-| versionCode    | App版本Code，同上可以加前缀区分不同平台。如 ios.versionCode                                                            |
-| custom.command | (选填) uapp run custom 执行的自定义命令。比如一条命令里做很多事: `npm run build:app && uapp prepare && uapp run build:dev` |
+| uapp.* 参数      | 说明                                                                                     |
+|:---------------|----------------------------------------------------------------------------------------|
+| name           | APP名字，不填写默认使用根节点的name。不同平台可以加前缀区分，如 android.name                                       |
+| package        | 应用的包名。不同平台可以加前缀区分，如 ios.package                                                        |
+| android.appkey | DCloud平台申请的，Android 平台 dcloud_appkey，下方有申请地址                                           |
+| ios.appkey     | DCloud平台申请的，iOS 平台 dcloud_appkey，下方有申请地址                                               |
+| versionName    | App版本名，同上可以加前缀区分不同平台。如 android.versionName                                             |
+| versionCode    | App版本Code，同上可以加前缀区分不同平台。如 ios.versionCode                                              |
+| custom.command | (选填) uapp run custom 执行的自定义命令。比如一条命令里做很多事: `uapp run build:app && node publish_apk.js` |
 
 ## 五、其他参考
 

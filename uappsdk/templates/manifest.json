@@ -8,7 +8,6 @@
     "package": "com.code0xff.uapp",
     "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
     "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",
-    "custom.command": "uapp prepare && uapp run build:dev",
     "info": "npm info uapp"
   },
   "app-plus": {

@@ -30,10 +30,12 @@ const knownOpts = {
   open: Boolean,
   webapp: Boolean,
   prepare: Boolean,
-  out: path
+  out: path,
+  release: String
 }
 
 const shortHands = {
+  r: '--release',
   o: '--out',
   v: '--version',
   h: '--help'
@@ -352,8 +354,17 @@ module.exports = function (inputArgs) {
 
   // command: uapp prepare
   if (cmd === 'prepare') {
-    prepareCommand()
-    return
+    return (async () => {
+      if (!args.argv.remain[1] || !args.argv.remain[1].startsWith('build:app')) {
+        return console.log(chalk.yellow(`命令无效，${$G.projectType} 工程仅支持 uapp prepare build:app*, 支持自定义扩展且名字必须app开头`))
+      }
+
+      if (args.webapp) {
+        await buildWebApp(args.argv.remain[1]).catch()
+      }
+
+      prepareCommand()
+    })()
   }
 
   // command: uapp run custom
@@ -370,101 +381,96 @@ module.exports = function (inputArgs) {
 
   // commands:
   // 先判断 projectType, webapp, android, ios
-  // webapp 时支持: uapp run dev:xxx , uapp run build:xxx
-  // uapp run build
-  // uapp run build:dev { --no-copy | 不复制到 hbx 自定义基座 }
+  // webapp 时支持: uapp run dev:* , uapp run build:*
+  // app 时仅支持: uapp run build:app*
   if (cmd === 'run') {
-    console.log('当前工程类型为 ' + chalk.yellow($G.projectType))
+    console.log('当前工程类型为 ' + chalk.yellow($G.projectType + ', vue' + $G.manifest.vueVersion))
 
-    // webapp 支持 dev:xxx, build:xxx
     if ($G.projectType === 'webapp') {
       let [a, b] = args.argv.remain[1].split(':')
       if (!['build', 'dev'].includes(a) || !b) {
-        return console.log('命令无效，webapp 仅支持 uapp run build:xxx / dev:xxx')
+        return console.log('命令无效，webapp 仅支持 uapp run build:* / dev:*, 支持自定义扩展')
       }
 
-      return buildWebApp(args.argv.remain[1])
+      return buildWebApp(args.argv.remain[1]).then().catch()
     }
 
-    if (!['build', 'build:dev', 'build:aab'].includes(args.argv.remain[1])) {
-      return console.log('命令无效，app 仅支持 uapp run build / build:dev / build:aab')
+    if (!args.argv.remain[1] || !args.argv.remain[1].startsWith('build:app')) {
+      return console.log(chalk.yellow(`命令无效，${$G.projectType} 工程仅支持 uapp run build:app*, 支持自定义扩展且名字必须app开头`))
     }
 
-    if (args.prepare) {
-      prepareCommand()
-    }
+    return (async () => {
+      if (args.prepare) {
+        if (args.webapp) {
+          await buildWebApp(args.argv.remain[1]).catch()
+        }
 
-    let buildType = args.argv.remain[1]
-    if ($G.projectType === 'android') {
-      let assembleTypeMap = {
-        'build': 'assembleRelease',
-        'build:dev': 'assembleDebug',
-        'build:aab': 'bundleRelease',
+        prepareCommand()
       }
 
-      let outFileMap = {
-        'build': 'apk/release/app-release.apk',
-        'build:dev': 'apk/debug/app-debug.apk',
-        'build:aab': 'bundle/release/app-release.aab',
-      }
+      if ($G.projectType === 'android') {
+        let buildType = 'dev'
+        if (['apk', 'aab'].includes(args.release)) {
+          buildType = args.release
+        }
 
-      let gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
-      execSync(gradle + ` ${assembleTypeMap[buildType]} -s`, { stdio: 'inherit' })
-      let buildOutFile = path.join($G.appDir, 'app/build/outputs/', outFileMap[buildType])
+        let assembleTypeMap = {
+          'dev': 'assembleDebug',
+          'apk': 'assembleRelease',
+          'aab': 'bundleRelease'
+        }
 
-      if (buildType === 'build:dev' && args.copy) {
-        sync(buildOutFile, path.join($G.webAppDir, 'unpackage/debug/android_debug.apk'), { delete: true })
-      }
+        let outFileMap = {
+          'dev': 'apk/debug/app-debug.apk',
+          'apk': 'apk/release/app-release.apk',
+          'aab': 'bundle/release/app-release.aab'
+        }
 
-      console.log('\n编译成功，安装包位置: ')
-      console.log(buildOutFile)
-      return
-    }
+        let gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
+        execSync(gradle + ` ${assembleTypeMap[buildType]} -s`, { stdio: 'inherit' })
+        let buildOutFile = path.join($G.appDir, 'app/build/outputs/', outFileMap[buildType])
 
-    if ($G.projectType === 'ios') {
-      if (buildType !== 'build:dev') {
-        console.log('iOS 仅支持自定义基座打包`uapp run build:dev`，如正式版发布请直接使用 xcode')
+        if (buildType === 'dev' && args.copy) {
+          sync(buildOutFile, path.join($G.webAppDir, 'unpackage/debug/android_debug.apk'), { delete: true })
+        }
+
+        console.log('\n编译成功，安装包位置: ')
+        console.log(buildOutFile)
         return
       }
 
-      try {
-        execSync('xcodegen', { stdio: 'inherit' })
-      } catch (e) {
-        console.log('请先安装 xcodegen, 可通过 brew install xcodegen 安装, 参考 iOS 配置文档: ')
-        console.log('👉 https://gitee.com/uappkit/platform/blob/main/ios/README.md')
-        return
-      }
+      if ($G.projectType === 'ios') {
+        try {
+          execSync('xcodegen', { stdio: 'inherit' })
+        } catch (e) {
+          console.log('请先安装 xcodegen, 可通过 brew install xcodegen 安装, 参考 iOS 配置文档: ')
+          console.log('👉 https://gitee.com/uappkit/platform/blob/main/ios/README.md')
+          return
+        }
 
-      // gererate uapp_debug.xcarchive
-      execSync(
-        'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive',
-        { stdio: 'inherit' }
-      )
-
-      // generate ipa
-      execSync(
-        'xcodebuild -exportArchive -archivePath out/uapp_debug.xcarchive -exportPath out -exportOptionsPlist config/export.plist',
-        { stdio: 'inherit' }
-      )
-
-      if (args.copy) {
-        sync(
-          path.join($G.appDir, 'out/HBuilder.ipa'),
-          path.join($G.webAppDir, 'unpackage/debug/ios_debug.ipa'),
-          { delete: true }
+        // gererate uapp_debug.xcarchive
+        execSync(
+          'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive',
+          { stdio: 'inherit' }
         )
+
+        // generate ipa
+        execSync(
+          'xcodebuild -exportArchive -archivePath out/uapp_debug.xcarchive -exportPath out -exportOptionsPlist config/export.plist',
+          { stdio: 'inherit' }
+        )
+
+        if (args.copy) {
+          sync(
+            path.join($G.appDir, 'out/HBuilder.ipa'),
+            path.join($G.webAppDir, 'unpackage/debug/ios_debug.ipa'),
+            { delete: true }
+          )
+        }
+
+        console.log(chalk.yellow('iOS 仅支持自定义基座打包，正式发版请直接使用 xcode'))
       }
-      return
-    }
-
-    console.log('无法识别的工程模板，请参考帮助')
-    return
-  }
-
-  // command: uapp publish debug
-  if (cmd === 'publish' && args.argv.remain[1] === 'debug') {
-    console.log('此命令已弃用，请使用 uapp run build:dev')
-    return
+    })()
   }
 
   printHelp()
@@ -519,6 +525,10 @@ function loadManifest() {
     $G.manifest = JSON.parse(stripJsonComments(content))
   }
 
+  if (!$G.manifest.vueVersion) {
+    $G.manifest.vueVersion = 2
+  }
+
   if (
     !['android', 'ios'].includes($G.projectType) &&
     ($G.args.argv.remain[0] === 'run' && !$G.args.argv.remain[1].includes(':app'))
@@ -554,11 +564,7 @@ function loadManifest() {
 }
 
 function prepareCommand() {
-  if ($G.args.webapp) {
-    buildWebApp('build:app-' + (Number($G.manifest.vueVersion) === 3 ? $G.projectType : 'plus'))
-  }
-
-  let compiledDir = path.join($G.webAppDir, 'unpackage/resources/', $G.manifest.appid)
+  let compiledDir = getBuildOut()
   if (!pathExistsSync(compiledDir)) {
     console.log(chalk.red('找不到本地App打包资源'))
     console.log('请使用 HBuilderX => 发行(菜单) => 原生App本地打包 => 生成本地打包App资源')
@@ -888,7 +894,7 @@ function buildWebApp(buildArg) {
 
   let vue = 'vue2'
   let spawnArgs = []
-  let spawnOpts = flag ? { stdio: 'inherit' } : {}
+  let spawnOpts = { stdio: 'pipe' }
   let buildScript
 
   if (Number($G.manifest.vueVersion) === 3) {
@@ -908,47 +914,55 @@ function buildWebApp(buildArg) {
     process.exit()
   }
 
-  let buildOutDir = $G.args.out
-  if (!buildOutDir) {
-    buildOutDir = getDefaultBuildOut(buildArg)
-  }
-
+  let buildOutDir = getBuildOut()
   process.env.HX_Version = '3.x'
   process.env.HX_APP_ROOT = process.env.APP_ROOT = hbxDir
   process.env.UNI_INPUT_DIR = $G.webAppDir
   process.env.UNI_OUTPUT_DIR = buildOutDir
   process.env.NODE_ENV = flag === 'build' ? 'production' : 'development'
 
-  if (flag) {
-    spawnSync(node, spawnArgs, spawnOpts)
-    console.log('资源输出位置: ' + chalk.green(buildOutDir))
-    if ($G.args.open && isWeixin) {
-      runWeixinCli(['open', '--project', buildOutDir])
-    }
-  } else {
+  return new Promise((resolve, reject) => {
     let p = spawn(node, spawnArgs, spawnOpts)
-    let first = true
+    let first = false
+
     p.stdout.on('data', data => {
       data = data.toString()
-      process.stdout.write(data)
+      if (data.indexOf('DONE') > -1 && data.indexOf('Build complete') > 0) {
+        first = true
+        process.stdout.write(chalk.green(data))
+      } else {
+        process.stdout.write(data)
+      }
 
-      if ($G.args.open &&
-        isWeixin &&
-        first &&
-        (data.includes('Watching for changes') || data.includes('ready in '))
-      ) {
+      if ($G.args.open && isWeixin && first) {
         first = false
         runWeixinCli(['open', '--project', buildOutDir])
       }
     })
 
+    let errOut = ''
     p.stderr.on('data', data => {
-      process.stderr.write(data.toString())
+      process.stderr.write(chalk.red(data))
+      errOut += data.toString()
     })
-  }
+
+    p.on('close', code => {
+      if (code !== 0 || errOut.indexOf('failed with errors') > -1 || errOut.indexOf('Missing platform') > -1) {
+        process.exit(-1)
+        return reject()
+      }
+
+      resolve()
+    })
+  })
 }
 
-function getDefaultBuildOut(buildArg) {
+function getBuildOut() {
+  if ($G.args.out) {
+    return $G.args.out
+  }
+
+  let buildArg = $G.args.argv.remain[1]
   let isDev = buildArg.startsWith('dev:')
   let relativeDir = ''
 
