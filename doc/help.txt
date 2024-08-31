@@ -15,9 +15,9 @@ uapp 通用命令🔥
 
   - app 工程下命令
     uapp run build:app                # 编译并发布自定义基座到 HBuilderX 下
-    uapp run build:app-plus           # vue2 要用 app-plus, 与 uniapp 一致
     uapp run build:app --release apk  # 编译 release 发布包
     uapp run build:app -r aab         # android 下打包为 aab 的格式
+    uapp run build:app-plus -r apk    # 注意：vue2 要用 :app-plus
 
   - 配置 HBuilderX 和 微信安装环境
     uapp config hbx.dir "C:\Program Files (x86)\HBuilderX"

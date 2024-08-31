@@ -596,7 +596,7 @@ function prepareCommand() {
   )
 
   emptyDirSync(embedAppsDir)
-  sync(compiledDir, path.join(embedAppsDir, $G.manifest.appid))
+  sync(compiledDir, path.join(embedAppsDir, $G.manifest.appid, 'www'))
   console.log(chalk.green('APP打包所需资源已更新'))
 }
 
