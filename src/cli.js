@@ -905,7 +905,15 @@ function buildWebApp(buildArg) {
     buildScript = path.join(hbxDir, 'plugins/uniapp-cli/bin/uniapp-cli.js')
     process.env.NODE_PATH = path.join(hbxDir, 'plugins/uniapp-cli/node_modules')
     spawnOpts.cwd = process.env.VUE_CLI_CONTEXT = process.env.UNI_CLI_CONTEXT = path.join(hbxDir, 'plugins/uniapp-cli')
-    process.env.UNI_PLATFORM = buildArg.split(':')[1]
+
+    const pkg = require(path.join($G.webAppDir, 'package.json'))
+    const buildName = buildArg.split(':')[1]
+    if (pkg?.['uni-app']?.['scripts']?.[buildName]) {
+      process.env.UNI_SCRIPT = buildName
+    } else {
+      process.env.UNI_PLATFORM = buildName
+    }
+
     spawnArgs = [buildScript]
   }
 
