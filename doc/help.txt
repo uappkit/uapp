@@ -37,8 +37,8 @@ app 工程下命令:
     uapp keygen                          # 生成 android 的签名文件 app.keystore
 
   - 更新打包用到的数据，包括版本信息, dcloudkey, App图标, 本地打包资源等
-    uapp prepare app:build
-    uapp prepare app:build --no-webapp             # 不编译 webapp
+    uapp prepare build:app
+    uapp prepare build:app --no-webapp             # 不编译 webapp
 
   - 运行自定义打包发布流程，配置见 README.md
     uapp run custom
