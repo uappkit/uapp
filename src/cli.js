@@ -104,7 +104,7 @@ module.exports = function (inputArgs) {
         }
 
         [regTplFile, privacyTplFile].map(file => {
-          let content = fs.readFileSync(file, 'utf-8')
+          let content = fs.readFileSync(file, 'utf8')
           content = content.replace(/\$COMPANY_FULL\$/g, companyFullName)
           content = content.replace(/\$COMPANY_SHORT\$/g, companyShortName)
           content = content.replace(/\$APPNAME\$/g, appName)
@@ -126,7 +126,7 @@ module.exports = function (inputArgs) {
 
   let configFile = path.join($G.sdkHomeDir, 'config.json')
   if (fs.existsSync(configFile)) {
-    $G.config = JSON.parse(fs.readFileSync(configFile, 'utf-8'))
+    $G.config = JSON.parse(fs.readFileSync(configFile, 'utf8'))
   }
 
   if (!$G.config['hbx.dir'] && process.platform === 'darwin') {
@@ -448,9 +448,10 @@ module.exports = function (inputArgs) {
           return
         }
 
+        const name = fs.readFileSync(path.join($G.appDir, '/project.yml'), 'utf8').match(/^name:\s*(\S+)/m)[1]
         // gererate uapp_debug.xcarchive
         execSync(
-          'xcodebuild -project uapp.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive',
+          `xcodebuild -project ${name}.xcodeproj -destination "generic/platform=iOS" -scheme "HBuilder" -archivePath out/uapp_debug.xcarchive archive`,
           { stdio: 'inherit' }
         )
 
@@ -609,7 +610,7 @@ function updateAndroidMetaData() {
   let wXPayEntryActivityFile = 'WXPayEntryActivity.java'
 
   let baseGradleFile = path.join($G.appDir, 'app/build.gradle')
-  let content = fs.readFileSync(baseGradleFile, 'utf-8')
+  let content = fs.readFileSync(baseGradleFile, 'utf8')
 
   content = content.replace(/(applicationId\s+")(.*)(")/, '$1' + $G.manifest.uapp.package + '$3')
   content = content.replace(/(app_name[',\s]+")(.*)(")/, '$1' + $G.manifest.uapp.name + '$3')
@@ -675,7 +676,7 @@ function updateAndroidIcons(resDir) {
 
 function updateIOSMetaData() {
   let baseYamlFile = path.join($G.appDir, 'config/base.yml')
-  let content = fs.readFileSync(baseYamlFile, 'utf-8')
+  let content = fs.readFileSync(baseYamlFile, 'utf8')
 
   content = content.replace(/(PRODUCT_BUNDLE_IDENTIFIER: )(.*)/, '$1' + $G.manifest.uapp.package)
   content = content.replace(/(MARKETING_VERSION: )(.*)/g, '$1' + $G.manifest.uapp.versionName)
@@ -706,14 +707,14 @@ function updateIOSMetaData() {
 }
 
 function replaceStoryboard(storyboardFile) {
-  let content = fs.readFileSync(storyboardFile, 'utf-8')
+  let content = fs.readFileSync(storyboardFile, 'utf8')
   const re = /(text=")(.+?)(".+)(?=uapp-launchscreen-appname)/
   content = content.replace(re, '$1' + $G.manifest.uapp.name + '$3')
   fs.writeFileSync(storyboardFile, content)
 }
 
 function replaceInfoPlist(plistFile) {
-  let content = fs.readFileSync(plistFile, 'utf-8')
+  let content = fs.readFileSync(plistFile, 'utf8')
   let re = /(<key>dcloud_appkey<\/key>\n.+?<string>)(.*?)(<\/string>)/g
   content = content.replace(re, '$1' + $G.manifest.uapp.appkey + '$3')
 
@@ -745,11 +746,11 @@ function replaceControlXml(xmlFile) {
   let sdkControlFile = path.join($G.sdkHomeDir, '/ios/SDK/control.xml')
   let innerSDKVersion = '1.0.0'
   if (fs.existsSync(sdkControlFile)) {
-    let content = fs.readFileSync(sdkControlFile, 'utf-8')
+    let content = fs.readFileSync(sdkControlFile, 'utf8')
     innerSDKVersion = content.match(/<HBuilder.+version="(.*)"/)[1] || innerSDKVersion
   }
 
-  let content = fs.readFileSync(xmlFile, 'utf-8')
+  let content = fs.readFileSync(xmlFile, 'utf8')
   let re = /(app appid=")(.+?)(")/g
   content = content.replace(re, '$1' + $G.manifest.appid + '$3')
   content = content.replace(/(<HBuilder.+version=")(.*)(")/, '$1' + innerSDKVersion + '$3')
@@ -798,7 +799,7 @@ function printJWTToken() {
     let config = require(path.join($G.appDir, 'jwt/config.json'))
 
     if (!config.team_id) {
-      let content = fs.readFileSync(path.join($G.appDir, 'config/custom.yml'), 'utf-8')
+      let content = fs.readFileSync(path.join($G.appDir, 'config/custom.yml'), 'utf8')
       let r = content.match(/DEVELOPMENT_TEAM:\s+(.*)/)
       config.team_id = r[1] || ''
     }
@@ -1037,5 +1038,5 @@ function clone(url, projectName) {
 }
 
 function printHelp() {
-  console.log(fs.readFileSync(path.join(__dirname, '../doc/help.txt'), 'utf-8'))
+  console.log(fs.readFileSync(path.join(__dirname, '../doc/help.txt'), 'utf8'))
 }
