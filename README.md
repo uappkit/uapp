@@ -89,7 +89,7 @@ uapp run build:electron
 
 👇 **uapp 编译微信小程序并打开工程**
 
-![android build](https://mixcut.b0.v56.fun/uapp/weixin_build.gif)
+![mp-weixin build](https://uappx.oss-cn-hangzhou.aliyuncs.com/repo/weixin.gif)
 
 其他更多命令，可直接参考：
 
@@ -138,13 +138,24 @@ uapp new YourProject
 
 ## 三、离线打包工程
 
+例如有个 demo1 项目，想将 android, ios, webapp 源码放在一起，可参考如下目录结构:
+
+```bash
+# 保持这个目录结构和名字，就不需要 `uapp manifest` 命令来定位 src 下的 manifest.json
+
+  demo1
+      ├── android  # android 源码 (uapp add android)
+      ├── ios      # ios 源码 (uapp add ios)
+      └── src      # webapp 源码 (可以 uapp new webapp 后，再改名为 src)
+```
+
 ### 1. 新建 android 工程
 
 `uapp add android`
 
 👇 **uapp 离线打包并发布 Android 自定义基座**
 
-![android build](https://mixcut.b0.v56.fun/uapp/android_build.gif?t=1698997415)
+![android build](https://uappx.oss-cn-hangzhou.aliyuncs.com/repo/android.gif)
 
 ### 2. 新建 ios 工程
 
@@ -156,7 +167,7 @@ iOS 的工程化一直都不太方便，通常都是用的 CocoaPods，但不适
 
 👇 **uapp 离线打包并发布 iOS 自定义基座**
 
-![ios build](https://mixcut.b0.v56.fun/uapp/ios_build.gif?t=1698997415)
+![ios build](https://uappx.oss-cn-hangzhou.aliyuncs.com/repo/ios.gif)
 
 ### 3. 离线工程下常见命令
 
@@ -340,7 +351,7 @@ tauri是基于`rust`开发，可以通过`rust`生态来扩展，`v2`还处在al
 
 👇 uapp 基于 Electron 桌面应用案例
 
-![electron demo](https://mixcut.b0.v56.fun/uapp/electron_demo.gif)
+![electron demo](https://uappx.oss-cn-hangzhou.aliyuncs.com/repo/electron.gif)
 
 ---
 
