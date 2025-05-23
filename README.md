@@ -1,4 +1,4 @@
-![uapp.dev](https://mixcut.b0.v56.fun/uapp/uapp.dev.png)
+![uapp.dev](https://raw.githubusercontent.com/zencodex/art/refs/heads/main/logo.png)
 
 ## uapp 能做什么
 
@@ -121,7 +121,7 @@ uapp new YourProject
   // ...
   "versionCode": "100",
   "uapp": {
-    "name": "μAppKit",
+    "name": "uapp",
     "package": "com.code0xff.uapp",
     "android.appkey": "申请并替换为 android dcloudkey",
     "ios.appkey": "申请并替换为 ios dcloudkey"
@@ -239,7 +239,7 @@ uapp run custom
   "versionName": "1.0.1",
   "versionCode": "1000000",
   "uapp": {
-    "name": "μAppKit",
+    "name": "uapp",
     "package": "com.code0xff.uapp",
     "android.appkey": "b4ab7d1c668cbb3b257aeeabd75c29da",
     "ios.appkey": "aa215ff1522abe39cb7ccec5943eeb92",

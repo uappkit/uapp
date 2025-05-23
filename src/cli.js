@@ -134,24 +134,21 @@ module.exports = function (inputArgs) {
   }
 
   if (!$G.config['wx.dir']) {
+    let settingFile = ''
+    let defaultPath = ''
+
     if (process.platform === 'darwin') {
-      let settingFile = path.join(require('os').homedir(), 'Library/Application Support/HBuilder X/user/settings.json')
-      if (fs.existsSync(settingFile)) {
-        $G.config['wx.dir'] = require(settingFile)['weApp.devTools.path']
-      }
-
-      if (!$G['wx.dir']) {
-        $G.config['wx.dir'] = '/Applications/wechatwebdevtools.app'
-      }
+      settingFile = path.join(require('os').homedir(), 'Library/Application Support/HBuilder X/user/settings.json')
+      defaultPath = '/Applications/wechatwebdevtools.app'
     } else if (process.platform === 'win32') {
-      let settingFile = path.join(require('os').homedir(), 'AppData/Roaming/HBuilder X/user/settings.json')
-      if (fs.existsSync(settingFile)) {
-        $G.config['wx.dir'] = require(settingFile)['weApp.devTools.path']
-      }
+      settingFile = path.join(require('os').homedir(), 'AppData/Roaming/HBuilder X/user/settings.json')
+      defaultPath = 'C:\\Program Files (x86)\\Tencent\\微信web开发者工具'
+    }
 
-      if (!$G.config['wx.dir']) {
-        $G.config['wx.dir'] = 'C:\\Program Files (x86)\\Tencent\\微信web开发者工具'
-      }
+    try {
+      $G.config['wx.dir'] = JSON.parse(fs.readFileSync(settingFile, 'utf8'))['weApp.devTools.path'] || defaultPath
+    } catch {
+      $G.config['wx.dir'] = defaultPath
     }
   }
 
@@ -545,7 +542,7 @@ function loadManifest() {
     console.log(chalk.yellow('manifest.json 中缺少 uapp 节点，请复制并添加如下内容'))
     console.log(`
 "uapp": {
-  "name": "μAppKit",
+  "name": "uapp",
   "package": "com.code0xff.uapp",
   "android.appkey": "申请并替换为 android dcloudkey",
   "ios.appkey": "申请并替换为 ios dcloudkey"
